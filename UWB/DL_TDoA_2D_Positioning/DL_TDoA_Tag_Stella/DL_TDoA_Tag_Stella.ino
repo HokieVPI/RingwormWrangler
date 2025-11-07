@@ -89,41 +89,14 @@ void rangingHandler(UWBRangingData &rangingData) {
   // Reset measurement count
   measurement_count = 0;
 
-  // IMPORTANT: To access DL-TDoA measurements, you need to enable support in StellaUWB library:
-  // 
-  // 1. In StellaUWB-main/src/hal/uwb_types.hpp, uncomment in RangingMeasurements union:
-  //    dltdoa_mesr dltdoa[MAX_TDOA_MEASURES];
-  //
-  // 2. In StellaUWB-main/src/uwbapps/UWBRangingData.hpp, uncomment:
-  //    const RangingMesrDlTdoas dlTdoaMeasure() const;
-  //
-  // 3. In StellaUWB-main/src/uwbapps/UWBRangingData.cpp, uncomment and implement:
-  //    const RangingMesrDlTdoas UWBRangingData::dlTdoaMeasure() const {
-  //        return result.measurements.dltdoa;
-  //    }
-  //
-  // Once enabled, you can use:
-  // const RangingMesrDlTdoas dltdoa = rangingData.dlTdoaMeasure();
-  
-  // For now, we'll provide a workaround using pointer casting
-  // WARNING: This is a hack and may break if the library structure changes
-  // It's better to properly enable DL-TDoA support in the library
-  
-  // Try to access the result structure (this is fragile!)
-  // We'll use a workaround by creating a wrapper or accessing via notification handler
-  // For production use, please enable the dlTdoaMeasure() function in the library
-  
-  Serial.println("WARNING: DL-TDoA measurement access requires library modification!");
-  Serial.println("Please enable dlTdoaMeasure() in StellaUWB library.");
-  Serial.println("See DL_TDoA_Helper.h for instructions.");
-  
-  // TODO: Once library is modified, uncomment this code:
-  /*
+  // DL-TDoA measurement access is now enabled in the StellaUWB library
   const RangingMesrDlTdoas dltdoa = rangingData.dlTdoaMeasure();
   
   // Process each measurement
+  // Note: dltdoa is a pointer to the array, so we access it as dltdoa[i]
   for (int i = 0; i < num_measurements && measurement_count < NUM_ANCHORS; i++) {
     // Find which anchor this measurement is from
+    // Check MAC address (first 2 bytes for short address)
     uint8_t anchor_idx = 255;
     for (uint8_t j = 0; j < NUM_ANCHORS; j++) {
       if (dltdoa[i].peer_addr[0] == ANCHORS[j].mac[0] && 
@@ -186,7 +159,6 @@ void rangingHandler(UWBRangingData &rangingData) {
     Serial.print("Need at least 3 measurements, got ");
     Serial.println(measurement_count);
   }
-  */
 }
 
 // Calculate 2D position using TDoA trilateration
@@ -403,8 +375,7 @@ void setup() {
   }
   Serial.println("Tag is listening for anchor ranging sessions...");
   Serial.println("Waiting for measurements...\n");
-  Serial.println("Note: DL-TDoA measurement extraction may require library modification");
-  Serial.println("to access the dltdoa measurement array directly.");
+  Serial.println("DL-TDoA measurement access is enabled in the library.");
 }
 
 void loop() {
