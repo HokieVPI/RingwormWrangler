@@ -27,9 +27,9 @@ const uint8_t ANCHOR_MAC[] = {0xCC, 0xCC};
 // Anchor 1: (0, 0)
 // Anchor 2: (5, 0)
 // Anchor 3: (2.5, 4.33) - height of equilateral triangle = side * sqrt(3)/2
-const int32_t ANCHOR_X = 250;    // X position in cm (2.5 meters)
-const int32_t ANCHOR_Y = 433;    // Y position in cm (4.33 meters)
-const int32_t ANCHOR_Z = 0;      // Z position in cm (set to 0 for 2D)
+const int32_t ANCHOR_X = 1.16;    // X position in M
+const int32_t ANCHOR_Y = 2.00;    // Y position in M 
+const int32_t ANCHOR_Z = 0;      // Z position in M (set to 0 for 2D)
 
 // Note: The coordinate system uses integers, so we use centimeters
 // For meters, multiply by 100
@@ -53,11 +53,11 @@ void setup() {
 
   Serial.println("DL-TDoA Anchor Responder 2 Starting...");
   Serial.print("Anchor Position: (");
-  Serial.print(ANCHOR_X / 100.0);
+  Serial.print(ANCHOR_X );
   Serial.print(", ");
-  Serial.print(ANCHOR_Y / 100.0);
+  Serial.print(ANCHOR_Y);
   Serial.print(", ");
-  Serial.print(ANCHOR_Z / 100.0);
+  Serial.print(ANCHOR_Z);
   Serial.println(") meters");
 
   // Initialize UWB stack

@@ -23,8 +23,8 @@ const uint8_t ANCHOR_MAC[] = {0xBB, 0xBB};
 
 // Anchor position in meters (2D: x, y, z=0)
 // Modify these values to match your anchor's physical position
-const int32_t ANCHOR_X = 5;    // X position in meters
-const int32_t ANCHOR_Y = 0;    // Y position in meters
+const int32_t ANCHOR_X = 0;    // X position in meters
+const int32_t ANCHOR_Y = 3.63;    // Y position in meters
 const int32_t ANCHOR_Z = 0;    // Z position in meters (set to 0 for 2D)
 
 // Initiator anchor MAC address

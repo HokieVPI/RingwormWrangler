@@ -37,8 +37,8 @@ struct AnchorPosition {
 // Define anchor positions (must match anchor configurations)
 const AnchorPosition ANCHORS[] = {
   {0.0, 0.0, {0xAA, 0xAA}},      // Anchor 1 (Initiator)
-  {5.0, 0.0, {0xBB, 0xBB}},      // Anchor 2 (Responder 1)
-  {2.5, 4.33, {0xCC, 0xCC}}      // Anchor 3 (Responder 2) - equilateral triangle
+  {0.0, 3.63, {0xBB, 0xBB}},      // Anchor 2 (Responder 1)
+  {1.16, 2.00, {0xCC, 0xCC}}      // Anchor 3 (Responder 2) - equilateral triangle
 };
 
 const uint8_t NUM_ANCHORS = 3;
