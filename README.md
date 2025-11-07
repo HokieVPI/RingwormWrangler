@@ -1,2 +1,2 @@
 # RingwormWrangler
-Autonomous wrestling mat cleaner for Virginia Tech mechanical engineering senior design 2025: Team 507
+Autonomous wrestling mat cleaner for Virginia Tech Mechanical Engineering senior design 2025: Team 507
