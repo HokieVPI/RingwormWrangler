@@ -22,12 +22,17 @@
 #include <StellaUWB.h>
 #include <math.h>
 
+// Pin definitions
+#define LED_PIN p37  // Stella's built-in LED for status indication
+
 // Tag configuration
 const uint32_t SESSION_ID = 0x12345678;
 const uint8_t TAG_MAC[] = {0xDD, 0xDD};
 
 // Known anchor positions (in meters)
 // These must match the positions configured in the anchor scripts
+// NOTE: Anchors use centimeters (int32_t) but tag uses meters (float) for calculations
+// Ensure values match: e.g., anchor at 220 cm = tag at 2.2 m
 struct AnchorPosition {
   float x;  // X position in meters
   float y;  // Y position in meters
@@ -35,10 +40,11 @@ struct AnchorPosition {
 };
 
 // Define anchor positions (must match anchor configurations)
+// Values are in meters (anchors store them in centimeters: multiply by 100)
 const AnchorPosition ANCHORS[] = {
-  {0.0, 0.0, {0xAA, 0xAA}},      // Anchor 1 (Initiator)
-  {0.0, 3.63, {0xBB, 0xBB}},      // Anchor 2 (Responder 1)
-  {1.16, 2.00, {0xCC, 0xCC}}      // Anchor 3 (Responder 2) - equilateral triangle
+  {0.0, 0.0, {0xAA, 0xAA}},      // Anchor 1 (Initiator): 0 cm = 0.0 m
+  {2.2, 0, {0xBB, 0xBB}},        // Anchor 2 (Responder 1): 220 cm = 2.2 m
+  {2.2, 2.2, {0xCC, 0xCC}}       // Anchor 3 (Responder 2): 220 cm = 2.2 m
 };
 
 const uint8_t NUM_ANCHORS = 3;
@@ -286,10 +292,9 @@ void setup() {
     delay(10);
   }
 
-#ifdef ARDUINO_ARDUINO_NANO33BLE
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
-#endif
+  // Configure LED pin for Stella
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH);  // Start with LED off (HIGH = off on Stella)
 
   Serial.println("DL-TDoA Tag with 2D Position Calculation (Arduino Stella)");
   Serial.println("==========================================================");
@@ -379,9 +384,8 @@ void setup() {
 }
 
 void loop() {
-#ifdef ARDUINO_ARDUINO_NANO33BLE
-  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-#endif
+  // Toggle LED to indicate system is running
+  digitalWrite(LED_PIN, !digitalRead(LED_PIN));
   delay(1000);
   
   // Periodically display current position if valid
