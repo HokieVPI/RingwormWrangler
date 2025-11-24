@@ -25,7 +25,7 @@ const uint8_t ANCHOR_MAC[] = {0xAA, 0xAA};
 // Note: The coordinate system uses integers, so we use centimeters
 // For meters, multiply by 100 (e.g., 2.2 meters = 220 centimeters)
 // Modify these values to match your anchor's physical position
-const int32_t ANCHOR_X = 0;    // X position in centimeters (can be negative)
+const int32_t ANCHOR_X = 142;    // X position in centimeters (can be negative)
 const int32_t ANCHOR_Y = 0;    // Y position in centimeters (can be negative)
 const int32_t ANCHOR_Z = 0;    // Z position in centimeters (set to 0 for 2D)
 
@@ -57,7 +57,7 @@ void setup() {
   Serial.println(") meters");
 
   // Initialize UWB stack
-  UWB.begin(Serial, uwb::LogLevel::UWB_INFO_LEVEL);
+  UWB.begin();
   Serial.println("UWB stack initialized");
 
   // Add delay to allow hardware to stabilize
@@ -88,6 +88,9 @@ void setup() {
   UWBMacAddress responder2Addr(UWBMacAddress::Size::SHORT, RESPONDER2_MAC);
   dstAddrs.add(responder1Addr);
   dstAddrs.add(responder2Addr);
+  // WARNING 7: MAC addresses in list may not be directly used in the constructor loop.
+  // The UWB stack may use session ID and MAC addresses from ranging parameters instead.
+  // If ranging fails, this may need investigation.
 
   // Set anchor coordinates (using relative coordinates for 2D positioning)
   UWBAnchorCoordinates coords;
@@ -99,30 +102,29 @@ void setup() {
   // Note: The phActiveRoundsConfig_t type is not exposed in the library API
   // The UWBActiveRounds class handles this internally
   // For now, create an empty rounds object - the DL-TDoA classes may handle configuration internally
+  // WARNING 4: Empty rounds may be acceptable if the UWB stack uses default round configuration.
+  // If ranging fails, explicit round configuration may be needed.
   UWBActiveRounds rounds(1);
   
   // TODO: If the library requires active rounds configuration, you may need to:
   // 1. Check if phActiveRoundsConfig_t is defined in the HAL implementation
+
   // 2. Use a different API if available
   // 3. Contact the library maintainers for the correct way to configure DL-TDoA rounds
 
   // Create DL-TDoA Initiator session
   UWBDltdoaInitiator initiator(SESSION_ID, srcAddr, coords, dstAddrs, rounds);
   
-  // Add session to session manager
+  // Add session to session manager (NOTE: Session manager creates a new incomplete object,
+  // so we must use the original 'initiator' object for all operations - see Issue 2 workaround)
   UWBSessionManager.addSession(initiator);
   
-  // Initialize the session
-  uwb::Status status = initiator.init();
-  if (status != uwb::Status::SUCCESS) {
-    Serial.print("Session initialization failed with status: ");
-    Serial.println((int)status);
-    while (1) delay(1000);
-  }
-  Serial.println("Session initialized successfully");
+  // Note: The UWBDltdoaInitiator constructor already calls init() internally (line 69 in UWBDltdoaInitiator.hpp),
+  // so we should NOT call init() again here to avoid double initialization errors.
+  Serial.println("Session initialized in constructor");
 
-  // Start ranging
-  status = initiator.start();
+  // Start ranging (use original object, not session manager's stored object)
+  uwb::Status status = initiator.start();
   if (status != uwb::Status::SUCCESS) {
     Serial.print("Failed to start ranging with status: ");
     Serial.println((int)status);

@@ -29,8 +29,8 @@ const uint8_t ANCHOR_MAC[] = {0xCC, 0xCC};
 // Anchor 1: (0, 0)
 // Anchor 2: (500, 0) - 5 meters = 500 centimeters
 // Anchor 3: (250, 433) - 2.5m, 4.33m = 250cm, 433cm
-const int32_t ANCHOR_X = 220;    // X position in centimeters (2.2 meters)
-const int32_t ANCHOR_Y = 220;    // Y position in centimeters (2.2 meters)
+const int32_t ANCHOR_X = 0;    // X position in centimeters (2.2 meters)
+const int32_t ANCHOR_Y = 160;    // Y position in centimeters (2.2 meters)
 const int32_t ANCHOR_Z = 0;      // Z position in centimeters (set to 0 for 2D)
 
 // Initiator anchor MAC address
@@ -60,7 +60,7 @@ void setup() {
   Serial.println(") meters");
 
   // Initialize UWB stack
-  UWB.begin(Serial, uwb::LogLevel::UWB_INFO_LEVEL);
+  UWB.begin();
   Serial.println("UWB stack initialized");
 
   // Add delay to allow hardware to stabilize
@@ -89,6 +89,9 @@ void setup() {
   UWBMacAddressList dstAddrs(UWBMacAddress::Size::SHORT);
   UWBMacAddress initiatorAddr(UWBMacAddress::Size::SHORT, INITIATOR_MAC);
   dstAddrs.add(initiatorAddr);
+  // WARNING 7: MAC addresses in list may not be directly used in the constructor loop.
+  // The UWB stack may use session ID and MAC addresses from ranging parameters instead.
+  // If ranging fails, this may need investigation.
 
   // Set anchor coordinates
   UWBAnchorCoordinates coords;
@@ -99,25 +102,23 @@ void setup() {
   // Configure active ranging rounds
   // Note: The phActiveRoundsConfig_t type is not exposed in the library API
   // The UWBActiveRounds class handles this internally
+  // WARNING 4: Empty rounds may be acceptable if the UWB stack uses default round configuration.
+  // If ranging fails, explicit round configuration may be needed.
   UWBActiveRounds rounds(1);
 
   // Create DL-TDoA Responder session
   UWBDltdoaResponder responder(SESSION_ID, srcAddr, coords, dstAddrs, rounds);
   
-  // Add session to session manager
+  // Add session to session manager (NOTE: Session manager creates a new incomplete object,
+  // so we must use the original 'responder' object for all operations - see Issue 2 workaround)
   UWBSessionManager.addSession(responder);
   
-  // Initialize the session
-  uwb::Status status = responder.init();
-  if (status != uwb::Status::SUCCESS) {
-    Serial.print("Session initialization failed with status: ");
-    Serial.println((int)status);
-    while (1) delay(1000);
-  }
-  Serial.println("Session initialized successfully");
+  // Note: The UWBDltdoaResponder constructor already calls init() internally (line 69 in UWBDltdoaResponder.hpp),
+  // so we should NOT call init() again here to avoid double initialization errors.
+  Serial.println("Session initialized in constructor");
 
-  // Start ranging
-  status = responder.start();
+  // Start ranging (use original object, not session manager's stored object)
+  uwb::Status status = responder.start();
   if (status != uwb::Status::SUCCESS) {
     Serial.print("Failed to start ranging with status: ");
     Serial.println((int)status);
