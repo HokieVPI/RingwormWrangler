@@ -353,6 +353,8 @@ void setup() {
   
   // Configure ranging parameters for DL-TDoA Tag
   Serial.println("Configuring session parameters...");
+NEW SKETCH
+
   tagSession.rangingParams.deviceRole(uwb::DeviceRole::DL_TDOA_TAG);
   tagSession.rangingParams.deviceType(uwb::DeviceType::CONTROLEE);
   // tagSession.rangingParams.multiNodeMode(uwb::MultiNodeMode::ONE_TO_MANY); removed since it is not applicable to passive DL-TDoA tags

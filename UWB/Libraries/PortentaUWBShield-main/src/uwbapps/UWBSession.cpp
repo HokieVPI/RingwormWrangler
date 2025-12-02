@@ -70,6 +70,19 @@ uwb::Status UWBSession::init()
         UWBHAL.Log_E("could not set ranging params");
         return res;
     }
+    // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    // UWBHAL.Log_E("Setting app params");
+    // UWBHAL.Log_E("App params size: %d", appParams.getSize());
+    // // for (int i = 0; i < appParams.getSize(); i++)
+    // // {
+    // //     UWBHAL.Log_E("App param %d: %d", i, appParams.findParam(i));
+    // // }
+    // UWBHAL.Log_E("Vendor params size: %d", vendorParams.getSize());
+    // // for (int i = 0; i < vendorParams.getSize(); i++)
+    // // {
+    // //     UWBHAL.Log_E("Vendor param %d: %d", i, vendorParams.findParam(i));
+    // // }
+    // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // Then set application parameters
     if (appParams.getSize())

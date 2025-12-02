@@ -11,29 +11,37 @@
  * - Channel: 9
  */
 
-#include <PortentaUWBShield.h>
-#include "uwbapps/UWBDltdoaResponder.hpp"
-#include "uwbapps/UWBAnchorCoordinates.hpp"
-#include "uwbapps/UWBMacAddressList.hpp"
-#include "uwbapps/UWBActiveRounds.hpp"
+ #include <ArduinoBLE.h>
+ #include <PortentaUWBShield.h>
+ #include <uwbapps/UWBDltdoaResponder.hpp>
+ #include <uwbapps/UWBAnchorCoordinates.hpp>
+ #include <uwbapps/UWBAppParamsList.hpp>
+ #include <uwbapps/UWBAppParamList.hpp>
+ #include "uwbapps/UWBMacAddressList.hpp"
+ #include <uwbapps/UWBActiveRounds.hpp>
+ #include "hal/UWB_types.hpp"
 
 // Anchor configuration
-const uint32_t SESSION_ID = 0x12345678;
+const uint32_t SESSION_ID = 0x11223344;
 const uint8_t ANCHOR_MAC[] = {0xBB, 0xBB};
 
-// Anchor position in centimeters (2D: x, y, z=0)
-// Note: The coordinate system uses integers, so we use centimeters
-// For meters, multiply by 100 (e.g., 2.2 meters = 220 centimeters)
-// Modify these values to match your anchor's physical position
-const int32_t ANCHOR_X = 180;    // X position in centimeters (2.2 meters)
-const int32_t ANCHOR_Y = 0;      // Y position in centimeters
-const int32_t ANCHOR_Z = 0;      // Z position in centimeters (set to 0 for 2D)
+
 
 // Initiator anchor MAC address
 const uint8_t INITIATOR_MAC[] = {0xAA, 0xAA};
 
 // Ranging round index
-const uint8_t ROUND_INDEX = 0;
+const uint8_t ROUND_INDEX = 1;
+
+// Session info notification handler
+void sessionInfoHandler(uwb::SessionInfo &sessionInfo) {
+  Serial.print("Session Info - Handle: 0x");
+  Serial.print(sessionInfo.sessionHandle, HEX);
+  Serial.print(", State: ");
+  Serial.print(sessionInfo.state);
+  Serial.print(", Reason: ");
+  Serial.println(sessionInfo.reason_code);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -45,7 +53,12 @@ void setup() {
   pinMode(LEDG, OUTPUT);
   digitalWrite(LEDG, LOW);
 #endif
+  UWB.registerSessionInfoCallback(sessionInfoHandler);
 
+  // Anchor position in centimeters (2D: x, y, z=0)
+  int ANCHOR_X = 180;
+  int ANCHOR_Y = 0;
+  int ANCHOR_Z = 0;
   Serial.println("DL-TDoA Anchor Responder 1 Starting...");
   Serial.print("Anchor Position: (");
   Serial.print(ANCHOR_X / 100.0, 2);  // Convert cm to meters for display
@@ -55,27 +68,6 @@ void setup() {
   Serial.print(ANCHOR_Z / 100.0, 2);
   Serial.println(") meters");
 
-  // Initialize UWB stack
-  UWB.begin();
-  Serial.println("UWB stack initialized");
-
-  // Add delay to allow hardware to stabilize
-  delay(500);
-
-  // Wait for UWB stack to be ready with timeout
-  unsigned long startTime = millis();
-  while (UWB.state() != 0 && (millis() - startTime) < 10000) {
-    delay(10);
-  }
-  
-  if (UWB.state() != 0) {
-    Serial.println("ERROR: UWB stack failed to initialize within timeout!");
-    Serial.print("UWB state: ");
-    Serial.println(UWB.state());
-    while (1) {
-      delay(1000);
-    }
-  }
   Serial.println("UWB stack ready");
 
   // Create source MAC address
@@ -85,9 +77,6 @@ void setup() {
   UWBMacAddressList dstAddrs(UWBMacAddress::Size::SHORT);
   UWBMacAddress initiatorAddr(UWBMacAddress::Size::SHORT, INITIATOR_MAC);
   dstAddrs.add(initiatorAddr);
-  // WARNING 7: MAC addresses in list may not be directly used in the constructor loop.
-  // The UWB stack may use session ID and MAC addresses from ranging parameters instead.
-  // If ranging fails, this may need investigation.
 
   // Set anchor coordinates
   UWBAnchorCoordinates coords;
@@ -96,30 +85,38 @@ void setup() {
   coords.setRelativeCoordinates(ANCHOR_X, ANCHOR_Y, ANCHOR_Z);
 
   // Configure active ranging rounds
-  // Note: The phActiveRoundsConfig_t type is not exposed in the library API
-  // The UWBActiveRounds class handles this internally
-  // WARNING 4: Empty rounds may be acceptable if the UWB stack uses default round configuration.
-  // If ranging fails, explicit round configuration may be needed.
   UWBActiveRounds rounds(1);
 
   // Create DL-TDoA Responder session
   UWBDltdoaResponder responder(SESSION_ID, srcAddr, coords, dstAddrs, rounds);
-  
-  // Add session to session manager (NOTE: Session manager creates a new incomplete object,
-  // so we must use the original 'responder' object for all operations - see Issue 2 workaround)
+
+  // Initialize UWB stack
+  UWB.begin();
+  Serial.println("UWB stack initialized");
+
+  // Wait for UWB stack to be ready
+  while (UWB.state() != 0) {
+    delay(10);
+  }
+
   UWBSessionManager.addSession(responder);
-  
-  // Note: The UWBDltdoaResponder constructor already calls init() internally (line 69 in UWBDltdoaResponder.hpp),
-  // so we should NOT call init() again here to avoid double initialization errors.
+  responder.start();
   Serial.println("Session initialized in constructor");
 
-  // Start ranging (use original object, not session manager's stored object)
-  uwb::Status status = responder.start();
-  if (status != uwb::Status::SUCCESS) {
-    Serial.print("Failed to start ranging with status: ");
-    Serial.println((int)status);
-    while (1) delay(1000);
+  // Verify session handle is valid
+  if (responder.sessionID() == 0) {
+    Serial.println("ERROR: Invalid session handle - init may have failed");
+    Serial.println("Halting execution");
+    while (1) {
+      delay(1000);
+    }
   }
+  Serial.print("Session handle: 0x");
+  Serial.println(responder.sessionID(), HEX);
+
+  // Add small delay to allow session to fully stabilize
+  delay(100);
+
   Serial.println("Ranging started - Anchor Responder 1 is active");
 }
 

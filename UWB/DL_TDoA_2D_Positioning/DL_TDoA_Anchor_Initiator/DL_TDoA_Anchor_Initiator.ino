@@ -10,31 +10,33 @@
  * - Session ID: 0x12345678
  * - Channel: 9
  */
-
+#include <ArduinoBLE.h>
 #include <PortentaUWBShield.h>
-#include "uwbapps/UWBDltdoaInitiator.hpp"
-#include "uwbapps/UWBAnchorCoordinates.hpp"
+#include <uwbapps/UWBDltdoaInitiator.hpp>
+#include <uwbapps/UWBAnchorCoordinates.hpp>
+#include <uwbapps/UWBAppParamsList.hpp>
+#include <uwbapps/UWBAppParamList.hpp>
 #include "uwbapps/UWBMacAddressList.hpp"
-#include "uwbapps/UWBActiveRounds.hpp"
+#include <uwbapps/UWBActiveRounds.hpp>
+#include "hal/UWB_types.hpp"
 
 // Anchor configuration
-const uint32_t SESSION_ID = 0x12345678;
+const uint32_t SESSION_ID = 0x11223344;
 const uint8_t ANCHOR_MAC[] = {0xAA, 0xAA};
 
-// Anchor position in centimeters (2D: x, y, z=0)
-// Note: The coordinate system uses integers, so we use centimeters
-// For meters, multiply by 100 (e.g., 2.2 meters = 220 centimeters)
-// Modify these values to match your anchor's physical position
-const int32_t ANCHOR_X = 142;    // X position in centimeters (can be negative)
-const int32_t ANCHOR_Y = 0;    // Y position in centimeters (can be negative)
-const int32_t ANCHOR_Z = 0;    // Z position in centimeters (set to 0 for 2D)
+// Session info notification handler
+void sessionInfoHandler(uwb::SessionInfo &sessionInfo) {
+  Serial.print("Session Info - Handle: 0x");
+  Serial.print(sessionInfo.sessionHandle, HEX);
+  Serial.print(", State: ");
+  Serial.print(sessionInfo.state);
+  Serial.print(", Reason: ");
+  Serial.println(sessionInfo.reason_code);
+}
 
-// Destination anchors (responders) MAC addresses
-const uint8_t RESPONDER1_MAC[] = {0xBB, 0xBB};  // Anchor 2
-const uint8_t RESPONDER2_MAC[] = {0xCC, 0xCC};  // Anchor 3
-
-// Ranging round index (typically 0 for the first round)
-const uint8_t ROUND_INDEX = 0;
+void rangingHandler(UWBRangingData &rangingData) {
+  Serial.println("Ranging data received");
+}
 
 void setup() {
   Serial.begin(115200);
@@ -47,6 +49,19 @@ void setup() {
   digitalWrite(LEDR, LOW);
 #endif
 
+  UWB.registerRangingCallback(rangingHandler);
+  UWB.registerSessionInfoCallback(sessionInfoHandler);
+
+  // Destination anchors (responders) MAC addresses
+  uint8_t RESPONDER1_MAC[] = {0xBB, 0xBB};
+  uint8_t RESPONDER2_MAC[] = {0xCC, 0xCC};
+  uint8_t ROUND_INDEX = 1;
+
+  // Anchor position in centimeters (2D: x, y, z=0)
+  int ANCHOR_X = 0;
+  int ANCHOR_Y = 0;
+  int ANCHOR_Z = 0;
+
   Serial.println("DL-TDoA Anchor Initiator Starting...");
   Serial.print("Anchor Position: (");
   Serial.print(ANCHOR_X / 100.0, 2);  // Convert cm to meters for display
@@ -56,27 +71,6 @@ void setup() {
   Serial.print(ANCHOR_Z / 100.0, 2);
   Serial.println(") meters");
 
-  // Initialize UWB stack
-  UWB.begin();
-  Serial.println("UWB stack initialized");
-
-  // Add delay to allow hardware to stabilize
-  delay(500);
-
-  // Wait for UWB stack to be ready with timeout
-  unsigned long startTime = millis();
-  while (UWB.state() != 0 && (millis() - startTime) < 10000) {
-    delay(10);
-  }
-  
-  if (UWB.state() != 0) {
-    Serial.println("ERROR: UWB stack failed to initialize within timeout!");
-    Serial.print("UWB state: ");
-    Serial.println(UWB.state());
-    while (1) {
-      delay(1000);
-    }
-  }
   Serial.println("UWB stack ready");
 
   // Create source MAC address
@@ -88,9 +82,6 @@ void setup() {
   UWBMacAddress responder2Addr(UWBMacAddress::Size::SHORT, RESPONDER2_MAC);
   dstAddrs.add(responder1Addr);
   dstAddrs.add(responder2Addr);
-  // WARNING 7: MAC addresses in list may not be directly used in the constructor loop.
-  // The UWB stack may use session ID and MAC addresses from ranging parameters instead.
-  // If ranging fails, this may need investigation.
 
   // Set anchor coordinates (using relative coordinates for 2D positioning)
   UWBAnchorCoordinates coords;
@@ -99,37 +90,38 @@ void setup() {
   coords.setRelativeCoordinates(ANCHOR_X, ANCHOR_Y, ANCHOR_Z);
 
   // Configure active ranging rounds
-  // Note: The phActiveRoundsConfig_t type is not exposed in the library API
-  // The UWBActiveRounds class handles this internally
-  // For now, create an empty rounds object - the DL-TDoA classes may handle configuration internally
-  // WARNING 4: Empty rounds may be acceptable if the UWB stack uses default round configuration.
-  // If ranging fails, explicit round configuration may be needed.
   UWBActiveRounds rounds(1);
-  
-  // TODO: If the library requires active rounds configuration, you may need to:
-  // 1. Check if phActiveRoundsConfig_t is defined in the HAL implementation
-
-  // 2. Use a different API if available
-  // 3. Contact the library maintainers for the correct way to configure DL-TDoA rounds
 
   // Create DL-TDoA Initiator session
-  UWBDltdoaInitiator initiator(SESSION_ID, srcAddr, coords, dstAddrs, rounds);
-  
-  // Add session to session manager (NOTE: Session manager creates a new incomplete object,
-  // so we must use the original 'initiator' object for all operations - see Issue 2 workaround)
+  UWBDltdoaInitiator initiator(0x11223344, srcAddr, coords, dstAddrs, rounds);
+
+  // Initialize UWB stack
+  UWB.begin();
+  Serial.println("UWB stack initialized");
+
+  // Wait for UWB stack to be ready
+  while (UWB.state() != 0) {
+    delay(10);
+  }
+
   UWBSessionManager.addSession(initiator);
-  
-  // Note: The UWBDltdoaInitiator constructor already calls init() internally (line 69 in UWBDltdoaInitiator.hpp),
-  // so we should NOT call init() again here to avoid double initialization errors.
+  initiator.start();
   Serial.println("Session initialized in constructor");
 
-  // Start ranging (use original object, not session manager's stored object)
-  uwb::Status status = initiator.start();
-  if (status != uwb::Status::SUCCESS) {
-    Serial.print("Failed to start ranging with status: ");
-    Serial.println((int)status);
-    while (1) delay(1000);
+  // Verify session handle is valid
+  if (initiator.sessionID() == 0) {
+    Serial.println("ERROR: Invalid session handle - init may have failed");
+    Serial.println("Halting execution");
+    while (1) {
+      delay(1000);
+    }
   }
+  Serial.print("Session handle: 0x");
+  Serial.println(initiator.sessionID(), HEX);
+
+  // Add small delay to allow session to fully stabilize
+  delay(100);
+
   Serial.println("Ranging started - Anchor Initiator is active");
   Serial.println("Listening for tags and ranging with other anchors...");
 }
@@ -138,6 +130,6 @@ void loop() {
 #if defined(ARDUINO_PORTENTA_C33)
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
-  delay(1000);
+  delay(10);
 }
 

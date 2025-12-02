@@ -7,6 +7,7 @@
 
 #include "UWB.hpp"
 #include "UWBSession.hpp"
+#include "UWBAppParamList.hpp"
 
 class UWBDltdoaTag : public UWBSession {
 public:     
@@ -19,23 +20,21 @@ public:
         sessionType(uwb::SessionType::RANGING);
         
         // Set ranging parameters using HAL types
-        rangingParams.setDeviceRole(uwb::DeviceRole::DL_TDOA_TAG);
-        rangingParams.setDeviceType(uwb::DeviceType::CONTROLEE);
-        rangingParams.setMultiNodeMode(uwb::MultiNodeMode::ONE_TO_MANY);
-        rangingParams.setRangingRoundUsage(uwb::RangingRoundUsage::DL_TDOA);
-        rangingParams.setScheduleMode(uwb::ScheduleMode::TIME_SCHEDULED);
-        rangingParams.setDeviceMacAddr(srcAddr);
+        rangingParams.deviceRole(uwb::DeviceRole::DL_TDOA_TAG);
+        rangingParams.deviceType(uwb::DeviceType::CONTROLEE);
+        rangingParams.multiNodeMode(uwb::MultiNodeMode::ONE_TO_MANY);
+        rangingParams.rangingRoundUsage(uwb::RangingMethod::DL_TDOA);
+        rangingParams.scheduledMode(uwb::ScheduledMode::TIME_SCHEDULED);
+        rangingParams.deviceMacAddr(srcAddr);
         
-        // Add app parameters using HAL parameter IDs
-        appParams.addOrUpdateParam(AppConfigId::RANGING_DURATION, AppParamType::U32, 200);
-        appParams.addOrUpdateParam(AppConfigId::SLOTS_PER_RR, AppParamType::U32, 10);
-        appParams.addOrUpdateParam(AppConfigId::SLOT_DURATION, AppParamType::U32, 1200);
-        appParams.addOrUpdateParam(AppConfigId::RFRAME_CONFIG, AppParamType::U32, 
-                                    static_cast<uint32_t>(uwb::RFrameConfig::SP1));
-        appParams.addOrUpdateParam(AppConfigId::IN_BAND_TERMINATION_ATTEMPT_COUNT, 
-                                    AppParamType::U32, 0);
-        appParams.addOrUpdateParam(AppConfigId::CHANNEL_NUMBER, AppParamType::U32, 9);
-        appParams.addOrUpdateParam(AppConfigId::NO_OF_CONTROLEES, AppParamType::U32, 1);
+        // Add app parameters using HAL parameter IDs - use buildScalar helper
+        appParams.addOrUpdateParam(buildScalar(uwb::AppConfigId::RangingDuration, 200));
+        appParams.addOrUpdateParam(buildScalar(uwb::AppConfigId::SlotsPerRound, 10));
+        appParams.addOrUpdateParam(buildScalar(uwb::AppConfigId::SlotDuration, 1200));
+        appParams.addOrUpdateParam(buildScalar(uwb::AppConfigId::RFrameConfig, 
+                                    static_cast<uint32_t>(uwb::RfFrameConfig::SP1)));
+        appParams.addOrUpdateParam(buildScalar(uwb::AppConfigId::Channel, 9));
+        appParams.addOrUpdateParam(buildScalar(uwb::AppConfigId::NumControlees, 1));
 
         uwb::Status status = init();
         if(status != uwb::Status::SUCCESS) {
