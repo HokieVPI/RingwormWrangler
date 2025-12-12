@@ -22,12 +22,17 @@
 #include <StellaUWB.h>
 #include <math.h>
 
-// Tag configuration
+// Pin definitions
+#define LED_PIN p37  // Stella's built-in LED for status indication
+
+// Tag configuratio
 const uint32_t SESSION_ID = 0x12345678;
 const uint8_t TAG_MAC[] = {0xDD, 0xDD};
 
 // Known anchor positions (in meters)
 // These must match the positions configured in the anchor scripts
+// NOTE: Anchors use centimeters (int32_t) but tag uses meters (float) for calculations
+// Ensure values match: e.g., anchor at 220 cm = tag at 2.2 m
 struct AnchorPosition {
   float x;  // X position in meters
   float y;  // Y position in meters
@@ -35,10 +40,11 @@ struct AnchorPosition {
 };
 
 // Define anchor positions (must match anchor configurations)
+// Values are in meters (anchors store them in centimeters: multiply by 100)
 const AnchorPosition ANCHORS[] = {
-  {0.0, 0.0, {0xAA, 0xAA}},      // Anchor 1 (Initiator)
-  {5.0, 0.0, {0xBB, 0xBB}},      // Anchor 2 (Responder 1)
-  {2.5, 4.33, {0xCC, 0xCC}}      // Anchor 3 (Responder 2) - equilateral triangle
+  {0.0, 0.0, {0xAA, 0xAA}},      // Anchor 1 (Initiator): 0 cm = 0.0 m
+  {1.80, 0, {0xBB, 0xBB}},        // Anchor 2 (Responder 1): 220 cm = 2.2 m
+  {0, 1.60, {0xCC, 0xCC}}       // Anchor 3 (Responder 2): 220 cm = 2.2 m
 };
 
 const uint8_t NUM_ANCHORS = 3;
@@ -286,10 +292,9 @@ void setup() {
     delay(10);
   }
 
-#ifdef ARDUINO_ARDUINO_NANO33BLE
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
-#endif
+  // Configure LED pin for Stella
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH);  // Start with LED off (HIGH = off on Stella)
 
   Serial.println("DL-TDoA Tag with 2D Position Calculation (Arduino Stella)");
   Serial.println("==========================================================");
@@ -312,54 +317,82 @@ void setup() {
   UWB.registerRangingCallback(rangingHandler);
 
   // Initialize UWB stack
-  UWB.begin(Serial, uwb::LogLevel::UWB_INFO_LEVEL);
+  UWB.begin();
   Serial.println("UWB stack initialized");
 
-  // Wait for UWB stack to be ready
-  while (UWB.state() != 0) {
+  // Add delay to allow hardware to stabilize
+  delay(500);
+
+  // Wait for UWB stack to be ready with timeout
+  unsigned long startTime = millis();
+  while (UWB.state() != 0 && (millis() - startTime) < 10000) {
     delay(10);
+  }
+  
+  if (UWB.state() != 0) {
+    Serial.println("ERROR: UWB stack failed to initialize within timeout!");
+    Serial.print("UWB state: ");
+    Serial.println(UWB.state());
+    while (1) {
+      delay(1000);
+    }
   }
   Serial.println("UWB stack ready");
 
   // Create source MAC address
+  Serial.println("Creating MAC address...");
   UWBMacAddress srcAddr(UWBMacAddress::Size::SHORT, TAG_MAC);
 
   // Create a UWBSession and configure it for DL-TDoA Tag mode
   // Since StellaUWB doesn't have a dedicated DL-TDoA tag class,
   // we need to manually configure a session
+  Serial.println("Creating UWBSession...");
   UWBSession tagSession;
   tagSession.sessionID(SESSION_ID);
   tagSession.sessionType(uwb::SessionType::RANGING);
   
   // Configure ranging parameters for DL-TDoA Tag
+  Serial.println("Configuring session parameters...");
+NEW SKETCH
+
   tagSession.rangingParams.deviceRole(uwb::DeviceRole::DL_TDOA_TAG);
   tagSession.rangingParams.deviceType(uwb::DeviceType::CONTROLEE);
-  tagSession.rangingParams.multiNodeMode(uwb::MultiNodeMode::ONE_TO_MANY);
-  tagSession.rangingParams.rangingRoundUsage(uwb::RangingMethod::DL_TDOA);
-  tagSession.rangingParams.scheduledMode(uwb::ScheduledMode::TIME_SCHEDULED);
+  // tagSession.rangingParams.multiNodeMode(uwb::MultiNodeMode::ONE_TO_MANY); removed since it is not applicable to passive DL-TDoA tags
+  // tagSession.rangingParams.rangingRoundUsage(uwb::RangingMethod::DL_TDOA);
+  // tagSession.rangingParams.scheduledMode(uwb::ScheduledMode::TIME_SCHEDULED); removed since it is not applicable to passive DL-TDoA tags
   tagSession.rangingParams.deviceMacAddr(srcAddr);
   
   // Configure app parameters
+  // Note: DL-TDoA tags are passive listeners, so scheduling parameters are not needed
+  // WARNING 6: SP1 and Sfd_Sts are equivalent (both value 1) - compatible with anchors
   tagSession.appParams.frameConfig(uwb::RfFrameConfig::Sfd_Sts);
   tagSession.appParams.stsConfig(uwb::StsConfig::StaticSts);
   tagSession.appParams.channel(9);
   tagSession.appParams.preambleCodeIndex(10);
   tagSession.appParams.sfdId(0);
   tagSession.appParams.addOrUpdateParam(buildScalar(uwb::AppConfigId::SessionInfoNtf, 1));
-  tagSession.appParams.rangingDuration(200);
-  tagSession.appParams.slotPerRR(10);
-  tagSession.appParams.slotDuration(1200);
-  tagSession.appParams.noOfControlees(1);
+  // Removed scheduling parameters - not applicable to passive DL-TDoA tags:
+  // tagSession.appParams.rangingDuration(200);
+  // tagSession.appParams.slotPerRR(10);
+  // tagSession.appParams.slotDuration(1200);
+  // tagSession.appParams.noOfControlees(0);
   
   // Add session to session manager
+  Serial.println("Adding session to manager...");
   UWBSessionManager.addSession(tagSession);
   
   // Initialize the session
+  Serial.println("Initializing session...");
   uwb::Status status = tagSession.init();
   if (status != uwb::Status::SUCCESS) {
-    Serial.print("Session initialization failed with status: ");
+    Serial.println("ERROR: Session initialization failed!");
+    Serial.print("Status code: ");
     Serial.println((int)status);
-    while (1) delay(1000);
+    Serial.print("Status enum value: ");
+    Serial.println(static_cast<int>(status));
+    while (1) {
+      delay(1000);
+    }
   }
   Serial.println("Session initialized successfully");
 
@@ -379,9 +412,8 @@ void setup() {
 }
 
 void loop() {
-#ifdef ARDUINO_ARDUINO_NANO33BLE
-  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-#endif
+  // Toggle LED to indicate system is running
+  digitalWrite(LED_PIN, !digitalRead(LED_PIN));
   delay(1000);
   
   // Periodically display current position if valid
