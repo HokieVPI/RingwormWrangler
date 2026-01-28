@@ -61,6 +61,7 @@ void setup() {
   //setup a session with ID 0x11223344
   UWBRangingControlee myControlee(0x11223344, srcAddr, dstAddr);
   
+  myControlee.rangingParams.multiNodeMode(uwb::MultiNodeMode::MULTICAST);
   //add the session to the session manager, in case you want to manage multiple connections
   UWBSessionManager.addSession(myControlee);
 

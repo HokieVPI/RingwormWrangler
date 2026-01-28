@@ -42,7 +42,7 @@ void setup() {
 #endif
 
   //define the source (this device) and destination MAC addresses, using 2-bytes MACs
-  uint8_t devAddr[]={0x22,0x22};
+  uint8_t devAddr[]={0x44,0x44};
   uint8_t destination[]={0x11,0x11};
   UWBMacAddress srcAddr(UWBMacAddress::Size::SHORT,devAddr);
   UWBMacAddress dstAddr(UWBMacAddress::Size::SHORT,destination);
@@ -61,6 +61,7 @@ void setup() {
   //setup a session with ID 0x11223344
   UWBRangingControlee myControlee(0x11223344, srcAddr, dstAddr);
   
+  myControlee.rangingParams.multiNodeMode(uwb::MultiNodeMode::MULTICAST);
   //add the session to the session manager, in case you want to manage multiple connections
   UWBSessionManager.addSession(myControlee);
 

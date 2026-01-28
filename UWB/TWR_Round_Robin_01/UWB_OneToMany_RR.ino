@@ -10,6 +10,8 @@
 
 
 // handler for ranging notifications
+volatile uint16_t dA1 =0xFFFF, dA2=0xFFFF, dA3 = 0xFFFF;
+
 void rangingHandler(UWBRangingData &rangingData) {
   Serial.print("GOT RANGING DATA - Type: "  );
   Serial.println(rangingData.measureType());
@@ -17,15 +19,18 @@ void rangingHandler(UWBRangingData &rangingData) {
   {
 
     RangingMeasures twr=rangingData.twoWayRangingMeasure();
-    for(int j=0;j<rangingData.available();j++)
-    {
 
-      if(twr[j].status==0 && twr[j].distance!=0xFFFF)
-      {
-        Serial.print("Distance: ");
-        Serial.println(twr[j].distance);
-      }
+    for(int j=0;j<rangingData.available();j++){
+      if(twr[j].status==0 && twr[j].distance!=0xFFFF) continue;
+
+    if (twr[j].peer_addr[0] == 0x22 && twr[j].peer_addr[1] == 0x22) dA1 = twr[j].distance;
+    if (twr[j].peer_addr[0] == 0x33 && twr[j].peer_addr[1] == 0x33) dA2 = twr[j].distance;
+    if (twr[j].peer_addr[0] == 0x44 && twr[j].peer_addr[1] == 0x44) dA3 = twr[j].distance;
     }
+        
+  Serial.print("A1="); Serial.print(dA1);
+  Serial.print(" A2="); Serial.print(dA2);
+  Serial.print(" A3="); Serial.println(dA3);
 
   }
 
@@ -49,12 +54,11 @@ void setup() {
   uint8_t destination1[]={0x22,0x22};
   uint8_t destination2[]={0x33,0x33};
   uint8_t destination3[]={0x44,0x44};
-  uint8_t destination4[]={0x55,0x55};
+
 
   UWBMacAddress dstAddr1(UWBMacAddress::Size::SHORT,destination1);
   UWBMacAddress dstAddr2(UWBMacAddress::Size::SHORT,destination2);
   UWBMacAddress dstAddr3(UWBMacAddress::Size::SHORT,destination3);
-  UWBMacAddress dstAddr4(UWBMacAddress::Size::SHORT,destination4);
 
   // Create a list of destination addresses
   UWBMacAddressList dest(UWBMacAddress::Size::SHORT);
