@@ -9,12 +9,12 @@
  */
 
 // Anchor Locations in Centimeters (x,y) z=0 
-int Anchor1_x=0;
-int Anchor1_y=0;
-int Anchor2_x=1000; 
-int Anchor2_y=0; 
-int Anchor3_x=1000; 
-int Anchor3_y=1000; 
+const float Anchor1_x=0;
+const float Anchor1_y=0;
+const float Anchor2_x=1000; 
+const float Anchor2_y=0; 
+const float Anchor3_x=1000; 
+const float Anchor3_y=1000; 
 
 
 
