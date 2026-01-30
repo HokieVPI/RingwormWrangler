@@ -2,7 +2,7 @@
 
 
 /**
- * this demo shows how to setup the Arduino Stella tag as a multicast
+ * this demo shows how to setup the Arduino Portenta as tag a multicast
  * UWB Ranging Controller (one-to-many)
  * It expects multiple counterparts setup as Responders/Controlees
  * This example demonstrates multicast ranging with up to 8 controlees
@@ -10,30 +10,36 @@
 
 
 // handler for ranging notifications
-volatile uint16_t dA1 =0xFFFF, dA2=0xFFFF, dA3 = 0xFFFF;
-
 void rangingHandler(UWBRangingData &rangingData) {
-  Serial.print("GOT RANGING DATA - Type: "  );
-  Serial.println(rangingData.measureType());
+
   if(rangingData.measureType()==(uint8_t)uwb::MeasurementType::TWO_WAY)
   {
 
     RangingMeasures twr=rangingData.twoWayRangingMeasure();
 
-    for(int j=0;j<rangingData.available();j++){
-      if(twr[j].status==0 && twr[j].distance!=0xFFFF) continue;
+  int d22 = 1;
+  int d33 = 1;
 
-    if (twr[j].peer_addr[0] == 0x22 && twr[j].peer_addr[1] == 0x22) dA1 = twr[j].distance;
-    if (twr[j].peer_addr[0] == 0x33 && twr[j].peer_addr[1] == 0x33) dA2 = twr[j].distance;
-    if (twr[j].peer_addr[0] == 0x44 && twr[j].peer_addr[1] == 0x44) dA3 = twr[j].distance;
+  for (int j = 0; j < rangingData.available(); j++) {
+    // skip invalid measurements
+    if (twr[j].status != 0 || twr[j].distance == 0xFFFF) {
+      continue;
     }
-        
-  Serial.print("A1="); Serial.print(dA1);
-  Serial.print(" A2="); Serial.print(dA2);
-  Serial.print(" A3="); Serial.println(dA3);
-
+  
+    // classify by short MAC (first two bytes)
+    if (twr[j].peer_addr[0] == 0x22 && twr[j].peer_addr[1] == 0x22) {
+      d22 = twr[j].distance;
+    } else if (twr[j].peer_addr[0] == 0x33 && twr[j].peer_addr[1] == 0x33) {
+      d33 = twr[j].distance;
+    }
   }
+  
+  // print once per callback/update (not once per j)
+  Serial.print(d22);
+  Serial.print(',');
+  Serial.println(d33);
 
+}
 }
 
 void setup() {
@@ -53,19 +59,17 @@ void setup() {
   // Define multiple destination MAC addresses (controlees)
   uint8_t destination1[]={0x22,0x22};
   uint8_t destination2[]={0x33,0x33};
-  uint8_t destination3[]={0x44,0x44};
 
 
   UWBMacAddress dstAddr1(UWBMacAddress::Size::SHORT,destination1);
   UWBMacAddress dstAddr2(UWBMacAddress::Size::SHORT,destination2);
-  UWBMacAddress dstAddr3(UWBMacAddress::Size::SHORT,destination3);
+
 
   // Create a list of destination addresses
   UWBMacAddressList dest(UWBMacAddress::Size::SHORT);
   dest.add(dstAddr1);
   dest.add(dstAddr2);
-  dest.add(dstAddr3);
-  dest.add(dstAddr4);
+ 
 
   // register the ranging notification handler before starting
   UWB.registerRangingCallback(rangingHandler);
@@ -93,7 +97,8 @@ void setup() {
 }
 
 void loop() {
-#if defined(ARDUINO_PORTENTA_C33)
+
+  #if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
