@@ -16,6 +16,9 @@ const float Anchor2_y=0;
 const float Anchor3_x=1000; 
 const float Anchor3_y=1000; 
 
+bool anchor1_received = false;
+bool anchor2_received = false;
+bool anchor3_received = false;
 
 
 // handler for ranging notifications
@@ -39,13 +42,25 @@ void rangingHandler(UWBRangingData &rangingData) {
     // classify by short MAC (first two bytes)
     if (twr[j].peer_addr[0] == 0x22 && twr[j].peer_addr[1] == 0x22) {
       dist_1 = twr[j].distance;
+      anchor1_received = true;
     } else if (twr[j].peer_addr[0] == 0x33 && twr[j].peer_addr[1] == 0x33) {
       dist_2 = twr[j].distance;
+      anchor2_received = true;
       } else if (twr[j].peer_addr[0] == 0x44 && twr[j].peer_addr[1] == 0x44) {
       dist_3 = twr[j].distance;
+      anchor3_received = true;
     }
   }
   
+if (!anchor1_received || !anchor2_received || !anchor3_received) {
+  return; // wait for all data
+}else 
+{
+  // reseting bools
+  anchor1_received = false;
+  anchor2_received = false;
+  anchor3_received = false;
+
   float A = 2.0f*Anchor2_x - 2.0f*Anchor1_x; 
   float B = 2.0f*Anchor2_y - 2.0f*Anchor1_y; 
   float C = dist_1*dist_1 - dist_2*dist_2 - Anchor1_x*Anchor1_x + Anchor2_x*Anchor2_x - Anchor1_y*Anchor1_y + Anchor2_y*Anchor2_y; 
@@ -65,7 +80,7 @@ void rangingHandler(UWBRangingData &rangingData) {
   Serial.print(x);
   Serial.print(", ");
   Serial.println(y);
-
+}
 }
 }
 
