@@ -1,19 +1,36 @@
 #include <PortentaUWBShield.h>
+#include <math.h>
 
 
 /**
- * this demo shows how to setup the Arduino Portenta as tag a multicast
- * UWB Ranging Controller (one-to-many)
- * It expects multiple counterparts setup as Responders/Controlees
+ * This Script claculates the position of an Arduino Protenta Tag based 
+ * on the distances to three anchors. Using multicast to range with 3+ anchors
+ * UWB Ranging Controller (one-to-many)*
+ * It expects multiple counterparts setup as Responders/Controlees*
  */
 
 // Anchor Locations in Centimeters (x,y) z=0 
-int Anchor1_x=0;
-int Anchor1_y=0;
-int Anchor2_x=1000; 
-int Anchor2_y=0; 
-int Anchor3_x=1000; 
-int Anchor3_y=1000; 
+const float Anchor1_x=0;// cm 
+const float Anchor1_y=0; // cm 
+const float Anchor2_x=0; // cm 
+const float Anchor2_y=213; // cm 
+const float Anchor3_x=182; // cm 
+const float Anchor3_y=0; // cm 
+
+bool anchor1_received = false;
+bool anchor2_received = false;
+bool anchor3_received = false;
+//previous position state variable 
+float prevX = 0.0f;// cm 
+float prevY = 0.0f;// cm 
+bool prev_valid = false;
+
+// Heading State Variable 
+float Azimuth = 0.0f; // rad
+bool Azimuth_valid = false;
+// constants 
+const float MinMovement = 5.0f; // cm 
+const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 
 
 
@@ -38,13 +55,25 @@ void rangingHandler(UWBRangingData &rangingData) {
     // classify by short MAC (first two bytes)
     if (twr[j].peer_addr[0] == 0x22 && twr[j].peer_addr[1] == 0x22) {
       dist_1 = twr[j].distance;
+      anchor1_received = true;
     } else if (twr[j].peer_addr[0] == 0x33 && twr[j].peer_addr[1] == 0x33) {
       dist_2 = twr[j].distance;
+      anchor2_received = true;
       } else if (twr[j].peer_addr[0] == 0x44 && twr[j].peer_addr[1] == 0x44) {
       dist_3 = twr[j].distance;
+      anchor3_received = true;
     }
   }
   
+if (!anchor1_received || !anchor2_received || !anchor3_received) {
+  return; // wait for all data
+}else 
+{
+  // reseting bools
+  anchor1_received = false;
+  anchor2_received = false;
+  anchor3_received = false;
+
   float A = 2.0f*Anchor2_x - 2.0f*Anchor1_x; 
   float B = 2.0f*Anchor2_y - 2.0f*Anchor1_y; 
   float C = dist_1*dist_1 - dist_2*dist_2 - Anchor1_x*Anchor1_x + Anchor2_x*Anchor2_x - Anchor1_y*Anchor1_y + Anchor2_y*Anchor2_y; 
@@ -54,7 +83,7 @@ void rangingHandler(UWBRangingData &rangingData) {
  
   float det = A*E - B*D;
 
-  if (fabs(det) < 1e-6) {
+  if (fabsf(det) < 1e-6) {
     Serial.println("Error: Anchors are collinear, cannot calculate position");
     return;
   }
@@ -64,7 +93,33 @@ void rangingHandler(UWBRangingData &rangingData) {
   Serial.print(x);
   Serial.print(", ");
   Serial.println(y);
+  //
+  if (!prev_valid) {
+    prevX = x;
+    prevY = y;
+    prev_valid = true;
+  }
+  else {
+    float dx = x - prevX;
+    float dy = y - prevY;
+    float dist_sq = dx*dx + dy*dy;
+    if (dist_sq >= minMovement_sq) {
+      Azimuth = atan2f(dy, dx);
+      Azimuth_valid = true;
+    }
+    prevX = x;
+    prevY = y;
+  }
 
+  // print the heading
+  if (Azimuth_valid) {
+    Serial.print("Heading: ");
+    Serial.println(Azimuth);
+  }
+  else {
+    Serial.println("Heading not valid");
+  }
+}
 }
 }
 
