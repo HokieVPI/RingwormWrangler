@@ -116,8 +116,8 @@ if (!anchor1_received || !anchor2_received || !anchor3_received) {
   Serial.print(", ");
   Serial.println(y);
   //
-prevX = x_circular_buffer[tail_index];
-prevY = y_circular_buffer[tail_index];
+  prevX = x_circular_buffer[tail_index];
+  prevY = y_circular_buffer[tail_index];
 
     float dx = x - prevX;
     float dy = y - prevY;
@@ -147,8 +147,6 @@ prevY = y_circular_buffer[tail_index];
   } 
   x_circular_buffer[head_index] = x;
   y_circular_buffer[head_index] = y;   
-
-
 
 
 //convert to degrees 
@@ -218,8 +216,6 @@ void setup() {
 
   //start the session
   myController.start();
-
-  
 
 }
 

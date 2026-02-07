@@ -30,21 +30,36 @@ bool prev_valid = false;
 // Heading State Variable 
 float Azimuth = 0.0f; // rad
 
+
 // constants 
 const float MinMovement = 5.0f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
-  vector<float> x_circular_buffer;
-  vector<float> y_circular_buffer;
-static constexpr int CIRCULAR_BUFFER_SIZE = 10;
-int head_index = CIRCULAR_BUFFER_SIZE - 1;
-int tail_index = 0;
+float x_circular_buffer[5];
+float y_circular_buffer[5];
+static constexpr int CIRCULAR_BUFFER_SIZE = 5;
+int head_index = 0;
+int tail_index = CIRCULAR_BUFFER_SIZE-1;
 bool inRangingHandler = false;
+
+// Pure Prusuit var
 static constexpr int LOOK_AHEAD = 100; // cm
 static constexpr int INTERVAL = 100; // ms
 static constexpr int STOP_POINT = 10; // cm
 static constexpr int PATH_LEN = 4;
-static float pathX[PATH_LEN] = {0,100,200,300}; 
-static float pathY[PATH_LEN] = {0,100,200,300}; 
+static float pathX[PATH_LEN] = {0,100,200,300}; //waypoints in cm 
+static float pathY[PATH_LEN] = {0,100,200,300}; // waypoints in cm 
+float x_i; // differnce in look-ahead distance from current position  
+float y_i; // differnce in look-ahead distance from current position 
+float L_d; // Look-Ahead Distance in cm 
+float L_d2; // Look-Ahead Distance squared 
+float K; // Curvature Coeff (K)
+float omega; // Rotational Velocity in rad/s
+const float velocity = 0.5f;  // Constant Velocity in m/s
+static constexpr int wheelRadius = 15;  //cm 
+static constexpr int trackWidth =86;  // Wheel to Wheel in cm 
+float leftMotor; 
+float rightMotor; 
+
 static constexpr int INTERPOLATION_STEP = PurePursuit::DEFAULT_INTERPOLATION_STEP;
 PurePursuit pp(&currentX, &currentY, &Azimuth, LOOK_AHEAD, INTERVAL, STOP_POINT);
 
@@ -106,6 +121,17 @@ if (!anchor1_received || !anchor2_received || !anchor3_received) {
   }
   float x = (C*E - F*B) / det;
   float y = (A*F - C*D) / det;
+
+  if(!prev_valid) {
+    for(int i = 0; i < CIRCULAR_BUFFER_SIZE; i++) {
+      x_circular_buffer[i] = x;
+      y_circular_buffer[i] = y;
+    }
+    prev_valid = true;
+    inRangingHandler = false;
+    return;
+  }
+
   currentX = x;
   currentY = y;
   Serial.print("Position: ");
@@ -113,43 +139,42 @@ if (!anchor1_received || !anchor2_received || !anchor3_received) {
   Serial.print(", ");
   Serial.println(y);
   //
-
-  head_index = tail_index;
-  if (tail_index == CIRCULAR_BUFFER_SIZE - 1) {
-    tail_index = 0;
-  }
-  else {
-    tail_index++;
-  }
-  x_circular_buffer[head_index] = x;
-  y_circular_buffer[head_index] = y;   
-
-prevX = x_circular_buffer[tail_index];
-prevY = y_circular_buffer[tail_index];
-
-if(!prev_valid) {
-  for(int i = 0; i < CIRCULAR_BUFFER_SIZE; i++) {
-    x_circular_buffer[i] = x;
-    y_circular_buffer[i] = y;
-  }
-  prev_valid = true;
-  return;
-}
-
-
+  prevX = x_circular_buffer[tail_index];
+  prevY = y_circular_buffer[tail_index];
 
     float dx = x - prevX;
     float dy = y - prevY;
     float dist_sq = dx*dx + dy*dy;
     if (dist_sq >= minMovement_sq) {
       Azimuth = atan2f(dy, dx);
-      
-    }
-    prevX = x;
-    prevY = y;
-  
-    [goal_x, goal_y] = pp.nextGoalPoint();
+                Serial.println(dist_sq);
 
+     }else{
+
+ 
+  Serial.print("Azimuth invalid--Min Movement");
+          Serial.println(dist_sq);
+              Serial.print("Heading: ");
+    Serial.println(Azimuth);
+
+  return;
+       }
+
+  head_index++;
+  if (head_index == CIRCULAR_BUFFER_SIZE) {
+    head_index = 0;
+  }
+  tail_index++;
+  if (tail_index == CIRCULAR_BUFFER_SIZE) {
+    tail_index = 0;
+  } 
+
+  x_circular_buffer[head_index] = x;
+  y_circular_buffer[head_index] = y;   
+
+  
+  //convert to degrees 
+  Azimuth=Azimuth*(180.0/PI);
   // print the heading
     Serial.print("Heading: ");
     Serial.println(Azimuth);
@@ -230,7 +255,20 @@ void loop() {
   while(inRangingHandler) {
     delay(10);
   }
+
   [goal_x, goal_y] = pp.nextGoalPoint();
+    x_i=goal_x-currentX; // differnce from goal point to current position 
+    y_i=goal_y-currentY; // differnce from goal point to current position
+// Find Look-ahead Distance 
+L_d2=x_i*x_i+y_i*y_i;  // Look-ahead Distance Squared 
+L_d=sqrt(L_d2); // Look-ahead distance
+// Compute the Curvature Coeff (K)
+K=2*sinf(Azimuth)/L_d; 
+omega=K*Velocity; 
+
+// // Find Motor Velocities 
+// leftMotor=(velocity+omega*trackWidth/2)/wheelRadius; 
+// rightMotor=(velocity+omega*trackWidth/2)/wheelRadius; 
 
   delay(1000);
 }
