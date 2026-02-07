@@ -10,12 +10,12 @@
  */
 
 // Anchor Locations in Centimeters (x,y) z=0 
-const float Anchor1_x=1;// cm 
-const float Anchor1_y=1; // cm 
-const float Anchor2_x=1; // cm 
+const float Anchor1_x=0;// cm 
+const float Anchor1_y=0; // cm 
+const float Anchor2_x=0; // cm 
 const float Anchor2_y=213; // cm 
 const float Anchor3_x=182; // cm 
-const float Anchor3_y=1; // cm 
+const float Anchor3_y=0; // cm 
 
 bool anchor1_received = false;
 bool anchor2_received = false;
@@ -33,12 +33,22 @@ float Azimuth = 0.0f; // rad
 // constants 
 const float MinMovement = 5.0f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
-float x_circular_buffer[5];
-float y_circular_buffer[5];
-static constexpr int CIRCULAR_BUFFER_SIZE = 5;
-int head_index = 0;
-int tail_index =  CIRCULAR_BUFFER_SIZE - 1;
+  vector<float> x_circular_buffer;
+  vector<float> y_circular_buffer;
+static constexpr int CIRCULAR_BUFFER_SIZE = 10;
+int head_index = CIRCULAR_BUFFER_SIZE - 1;
+int tail_index = 0;
 bool inRangingHandler = false;
+static constexpr int LOOK_AHEAD = 100; // cm
+static constexpr int INTERVAL = 100; // ms
+static constexpr int STOP_POINT = 10; // cm
+static constexpr int PATH_LEN = 4;
+static float pathX[PATH_LEN] = {0,100,200,300}; 
+static float pathY[PATH_LEN] = {0,100,200,300}; 
+static constexpr int INTERPOLATION_STEP = PurePursuit::DEFAULT_INTERPOLATION_STEP;
+PurePursuit pp(&currentX, &currentY, &Azimuth, LOOK_AHEAD, INTERVAL, STOP_POINT);
+
+
 
 
 // handler for ranging notifications
@@ -92,23 +102,10 @@ if (!anchor1_received || !anchor2_received || !anchor3_received) {
 
   if (fabsf(det) < 1e-6) {
     Serial.println("Error: Anchors are collinear, cannot calculate position");
-    inRangingHandler = false;
-
     return;
   }
   float x = (C*E - F*B) / det;
   float y = (A*F - C*D) / det;
-
-  if(!prev_valid) {
-    for(int i = 0; i < CIRCULAR_BUFFER_SIZE; i++) {
-      x_circular_buffer[i] = x;
-      y_circular_buffer[i] = y;
-    }
-    prev_valid = true;
-    inRangingHandler = false;
-    return;
-  }
-  
   currentX = x;
   currentY = y;
   Serial.print("Position: ");
@@ -116,48 +113,47 @@ if (!anchor1_received || !anchor2_received || !anchor3_received) {
   Serial.print(", ");
   Serial.println(y);
   //
+
+  head_index = tail_index;
+  if (tail_index == CIRCULAR_BUFFER_SIZE - 1) {
+    tail_index = 0;
+  }
+  else {
+    tail_index++;
+  }
+  x_circular_buffer[head_index] = x;
+  y_circular_buffer[head_index] = y;   
+
 prevX = x_circular_buffer[tail_index];
 prevY = y_circular_buffer[tail_index];
+
+if(!prev_valid) {
+  for(int i = 0; i < CIRCULAR_BUFFER_SIZE; i++) {
+    x_circular_buffer[i] = x;
+    y_circular_buffer[i] = y;
+  }
+  prev_valid = true;
+  return;
+}
+
+
 
     float dx = x - prevX;
     float dy = y - prevY;
     float dist_sq = dx*dx + dy*dy;
     if (dist_sq >= minMovement_sq) {
       Azimuth = atan2f(dy, dx);
-                Serial.println(dist_sq);
+      
+    }
+    prevX = x;
+    prevY = y;
+  
+    [goal_x, goal_y] = pp.nextGoalPoint();
 
-     }else{
-
- 
-  Serial.print("Azimuth invalid--Min Movement");
-          Serial.println(dist_sq);
-              Serial.print("Heading: ");
-    Serial.println(Azimuth);
-
-  return;
-       }
-
-  head_index++;
-  if (head_index == CIRCULAR_BUFFER_SIZE) {
-    head_index = 0;
-  }
-  tail_index++;
-  if (tail_index == CIRCULAR_BUFFER_SIZE) {
-    tail_index = 0;
-  } 
-  x_circular_buffer[head_index] = x;
-  y_circular_buffer[head_index] = y;   
-
-
-
-
-//convert to degrees 
-Azimuth=Azimuth*(180.0/PI); 
   // print the heading
     Serial.print("Heading: ");
     Serial.println(Azimuth);
-//Serial.println(prevX);
-//Serial.println(prevY);
+
 }
 }
 
@@ -219,16 +215,22 @@ void setup() {
   //start the session
   myController.start();
 
-  
-
+// Set up the Pure Pursuit path
+pp.setPath(pathX, pathY, PATH_LEN);
+pp.setInterpolationStep(INTERPOLATION_STEP); 
+pp.start();
 }
 
 void loop() {
-
   #if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
+
+  while(inRangingHandler) {
+    delay(10);
+  }
+  [goal_x, goal_y] = pp.nextGoalPoint();
 
   delay(1000);
 }
