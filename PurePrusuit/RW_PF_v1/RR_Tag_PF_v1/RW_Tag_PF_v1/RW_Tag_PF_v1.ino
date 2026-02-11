@@ -8,12 +8,12 @@
  */
 
 // Anchor Locations in Centimeters (x,y) z=0 
-const float Anchor1_x=0;// cm 
+const float Anchor1_x=1290;// cm 
 const float Anchor1_y=0; // cm 
 const float Anchor2_x=0; // cm 
-const float Anchor2_y=467; // cm 
-const float Anchor3_x=506; // cm 
-const float Anchor3_y=0; // cm 
+const float Anchor2_y=1262; // cm 
+const float Anchor3_x=1379; // cm 
+const float Anchor3_y=2641; // cm 
 // Initialize Distance Variables
 int dist_1 = 0;
 int dist_2 = 0;
@@ -47,8 +47,8 @@ static constexpr int LOOK_AHEAD = 1000; // cm
 static constexpr int INTERVAL = 1000; // ms
 static constexpr int STOP_POINT = 50; // cm
 static constexpr int PATH_LEN = 4;
-static float pathX[PATH_LEN] = {455,450,10,460}; //waypoints in cm 
-static float pathY[PATH_LEN] = {495,490,10,500}; // waypoints in cm 
+static float pathX[PATH_LEN] = {200,792,792,792}; //waypoints in cm 
+static float pathY[PATH_LEN] = {200,1321,1864,2441 }; // waypoints in cm 
 float x_i; // differnce in look-ahead distance from current position  
 float y_i; // differnce in look-ahead distance from current position 
 float L_d; // Look-Ahead Distance in cm 
@@ -204,8 +204,8 @@ float prevY=0.0f;
   }
 
   Azimuth=global_azimuth *(180.0/PI);
-  Serial.print("Heading: ");
-  Serial.println(Azimuth);
+  // Serial.print("Heading: ");
+  // Serial.println(Azimuth);
 
   new_goal = true;
 // ------------ End Heading Calculation ------------ //
@@ -302,20 +302,21 @@ Serial.println(goal_y);
 float DesiredHeading=0.0f;
 DesiredHeading=atan2f(y_i, x_i);
 DesiredHeading=DesiredHeading*(180.0/PI);
-Serial.print("Desired Heading: ");
-Serial.println(DesiredHeading);
-  Serial.println(currentX);
-  Serial.println(currentY);
-// Serial.print("Global Heading: ");
-// Serial.println(global_azimuth);
+// Serial.print("Desired Heading: ");
+// Serial.println(DesiredHeading);
+  //  Serial.print("Global Heading: ");
+  //   Serial.println(global_azimuth);
+  Serial.println(currentX_global);
+  Serial.println(currentY_global);
+ 
 L_d2=x_i*x_i+y_i*y_i;  // Look-ahead Distance Squared 
 L_d=sqrt(L_d2); // Look-ahead distance
 
 // Compute the Curvature Coeff (K)
 K=2*sinf(global_azimuth)/L_d; 
-Serial.print("Curvature Coeff: ");
-Serial.println(K);
-omega=K*velocity; 
+// Serial.print("Curvature Coeff: ");
+// Serial.println(K);
+// omega=K*velocity; 
 
 // // Find Motor Velocities 
 // leftMotor=(velocity+omega*trackWidth/2)/wheelRadius; 
