@@ -69,6 +69,13 @@ PurePursuit pp(&currentX_global, &currentY_global , &Azimuth, LOOK_AHEAD, INTERV
 
 
 
+// Helper to wrap angle to [-PI, PI]
+static float wrapAnglePi(float a) {
+  while (a > PI)  a -= 2.0f * PI;
+  while (a < -PI) a += 2.0f * PI;
+  return a;
+}
+
 // handler for ranging notifications
 void rangingHandler(UWBRangingData &rangingData) {
   inRangingHandler = true;
@@ -298,27 +305,31 @@ Serial.println(goal_y);
 
     x_i=goal_x-currentX_global; // differnce from goal point to current position 
     y_i=goal_y-currentY_global; // differnce from goal point to current position
-// Find Look-ahead Distance 
-float DesiredHeading=0.0f;
-DesiredHeading=atan2f(y_i, x_i);
-DesiredHeading=DesiredHeading*(180.0/PI);
+// Find Look-ahead Distance and heading to goal
+float angleToGoal = atan2f(y_i, x_i); // radians
+// For debug, convert desired heading to degrees
+float DesiredHeading = angleToGoal * (180.0/PI);
 Serial.print("Desired Heading: ");
 Serial.println(DesiredHeading);
-   Serial.print("Global Heading: ");
-    Serial.println(global_azimuth);
+Serial.print("Global Heading: ");
+Serial.println(global_azimuth);
   Serial.println(currentX_global);
   Serial.println(currentY_global);
     Serial.println(x_i);
     Serial.println(y_i);
 
-// L_d2=x_i*x_i+y_i*y_i;  // Look-ahead Distance Squared 
-// L_d=sqrt(L_d2); // Look-ahead distance
+// Look-ahead distance
+L_d2=x_i*x_i+y_i*y_i;  // Look-ahead Distance Squared 
+L_d=sqrt(L_d2); // Look-ahead distance
 
-// // Compute the Curvature Coeff (K)
-// K=2*sinf(global_azimuth)/L_d; 
-// Serial.print("Curvature Coeff: ");
-// Serial.println(K);
-// omega=K*velocity; 
+// Compute the angle difference (alpha) in radians
+float alpha = wrapAnglePi(desired_heading - global_azimuth);
+
+// Compute the Curvature Coeff (K)
+K=2.0f*sinf(alpha)/L_d; 
+Serial.print("Curvature Coeff: ");
+Serial.println(K);
+omega=K*velocity; 
 
 // Find Motor Velocities 
 // leftMotor=(velocity+omega*trackWidth/2)/wheelRadius; 

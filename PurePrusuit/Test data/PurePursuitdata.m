@@ -2,7 +2,7 @@ clc
 clear
 close all
 
-%% data 1
+% data 1
 data1 = importdata("test_2_10_26");
 amounts = data1.data;
 robotx = [];
@@ -17,10 +17,10 @@ while i <= length(amounts)
     roboty = [roboty; amounts(i+3)];
     i = i+4;
 end
-robotx = robotx
-roboty = roboty
-goalx = goalx
-goaly = goaly
+robotx = robotx;
+roboty = roboty;
+goalx = goalx;
+goaly = goaly;
 figure
 hold on
 line(robotx,roboty)
@@ -30,7 +30,7 @@ ylim([0, 2641])
 hold off
 
 
-%% data 2
+% data 2
 data2 = readtable("test2_2_10_26");
 robotx = [];
 desiredHeading = [];
@@ -50,13 +50,13 @@ while i <= height(data2)-7
     goaly = [goaly; data2(i+6,1)];
     i = i+7;
 end
-desiredHeading = table2array(desiredHeading)
-globalHeading = table2array(globalHeading)
-robotx = table2array(robotx)
-roboty = table2array(roboty)
-curvatureCoeff = table2array(curvatureCoeff)
-goalx = table2array(goalx)
-goaly = table2array(goaly)
+desiredHeading = table2array(desiredHeading);
+globalHeading = table2array(globalHeading);
+robotx = table2array(robotx);
+roboty = table2array(roboty);
+curvatureCoeff = table2array(curvatureCoeff);
+goalx = table2array(goalx);
+goaly = table2array(goaly);
 figure
 hold on
 line(robotx,roboty)
@@ -67,7 +67,7 @@ hold off
 
 
 
-%% data 3
+% data 3
 
 data3 = readtable("test3_2_10_26");
 robotx = [];
@@ -88,13 +88,13 @@ while i <= height(data3)-7
     goaly = [goaly; data3(i+6,1)];
     i = i+7;
 end
-desiredHeading = table2array(desiredHeading)
-globalHeading = table2array(globalHeading)
-robotx = table2array(robotx)
-roboty = table2array(roboty)
-curvatureCoeff = table2array(curvatureCoeff)
-goalx = table2array(goalx)
-goaly = table2array(goaly)
+desiredHeading = table2array(desiredHeading);
+globalHeading = table2array(globalHeading);
+robotx = table2array(robotx);
+roboty = table2array(roboty);
+curvatureCoeff = table2array(curvatureCoeff);
+goalx = table2array(goalx);
+goaly = table2array(goaly);
 figure
 hold on
 line(robotx,roboty)
@@ -103,7 +103,7 @@ xlim([0, 2133.6])
 ylim([0, 2641])
 hold off
 
-%% data 4
+% data 4
 
 data4 = readtable("test4_2_10_26");
 robotx = [];
@@ -141,12 +141,13 @@ line(robotx,roboty)
 scatter(goalx,goaly,'Color','r')
 xlim([0, 2133.6])
 ylim([0, 2641])
+grid on 
 hold off
 
 
-%% data 5
-
-% data5 = readtable("C:\Users\granp\OneDrive\Documents\GitHub\RingwormWrangler\PurePrusuit\Test data\test5_2_10_26");
+% %% data 5
+% 
+% data5 = readtable("test5_2_10_26");
 % robotx = [];
 % desiredHeading = [];
 % globalHeading = [];
@@ -169,11 +170,11 @@ hold off
 %     goaly = [goaly; data5(i+8,1)];
 %     i = i+9;
 % end
-% desiredHeading = table2array(desiredHeading)
-% globalHeading = table2array(globalHeading)
+% % desiredHeading = table2array(desiredHeading)
+% % globalHeading = table2array(globalHeading)
 % robotx = table2array(robotx)
 % roboty = table2array(roboty)
-% curvatureCoeff = table2array(curvatureCoeff)
+% % curvatureCoeff = table2array(curvatureCoeff)
 % goalx = table2array(goalx)
 % goaly = table2array(goaly)
 % figure
@@ -182,6 +183,7 @@ hold off
 % scatter(goalx,goaly,'Color','r')
 % xlim([0, 2133.6])
 % ylim([0, 2641])
+% grid on
 % hold off
 
 
