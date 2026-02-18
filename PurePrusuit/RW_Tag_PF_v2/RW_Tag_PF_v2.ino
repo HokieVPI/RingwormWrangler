@@ -84,12 +84,14 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 4;
+static constexpr int PATH_LENGTH = 6;
 static Waypoint path[PATH_LENGTH] = {
   {200, 200},
-  {792, 1321},
-  {792, 1864},
-  {792, 2441}
+  {200, 2441},
+  {729, 2441},
+  {729, 200},
+  {1200, 200},
+  {1200, 2441},
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
@@ -147,6 +149,10 @@ GoalResult findLookaheadGoal() {
 
   float Lsq = look_ahead * look_ahead;
 
+bool miss_wp;
+miss_wp = true;
+
+while (miss_wp)  {
   // Search each segment from pathSegIdx forward
   for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
 
@@ -164,8 +170,13 @@ GoalResult findLookaheadGoal() {
 
     float discriminant = qb * qb - 4.0f * qa * qc;
 
-    if (discriminant < 0.0f) continue;  // circle misses this segment
-
+    if (discriminant < 0.0f){ 
+      result.gx = path[seg].wp_x;
+      result.gy = path[seg].wp_y;
+      result.found = true;
+      return result;  // first valid hit on the earliest forward segment
+      miss_wp=false; // circle misses this segment
+    } else{
     float sqrtDisc = sqrtf(discriminant);
 
     // Two candidate parameter values along the segment (0 = start, 1 = end)
@@ -187,13 +198,17 @@ GoalResult findLookaheadGoal() {
       return result;  // first valid hit on the earliest forward segment
     }
   }
+  miss_wp=false;
+}
+  }
 
-  // Fallback: no intersection found, aim at next waypoint directly
-  if (!result.found) {
-    int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
-    result.gx = path[nextWp].wp_x;
-    result.gy = path[nextWp].wp_y;
-    result.found = true;
+  // // Fallback: no intersection found, aim at next waypoint directly
+  // // could increase lookahead distance or 
+  // if (!result.found) {
+  //   int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
+  //   result.gx = path[nextWp].wp_x;
+  //   result.gy = path[nextWp].wp_y;
+  //   result.found = true;
   }
 
   return result;

@@ -71,7 +71,7 @@ sgtitle('Motor1\_PID\_tune: each column vs Time');
 %% 
 figure;
 plot(Time, M1Speed,'b');
-title('Speed channels vs Time');
+title('Motor #1 Tuning');
 xlabel('Time (s)');
 ylabel('QPPS (count/s')
 xlim([96.8 97.8])
