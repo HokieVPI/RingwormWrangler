@@ -1,30 +1,46 @@
-const int servoExtend = 1
-const int servoRetract = 2
-bool mopStatus = false
+const int RPWM = 11;
+const int LPWM = 12;
+int speed = 0;
+int mopStatus = 0;
 
 void setup() {
-  pinmode(servoExtend,OUTPUT)
-  pinmode(servoRetract,OUTPUT)
-  // put your setup code here, to run once:
+  pinMode(RPWM, OUTPUT);
+  pinMode(LPWM, OUTPUT);
+  Serial.begin(115200);
 }
 
 void loop() {
+  Serial.println("Mop Status (1 = Extend / 0 = Retract, other = Off)");
+
+  if (Serial.available() > 0) {
+    int userInput = Serial.parseInt();
+
+    if (userInput == 1) {
+      mopStatus = 1;
+    } else if (userInput == 0) {
+      mopStatus = 0;
+    } else {
+      mopStatus = -1;
+    }
+  }
+
   // extends the mop
-  if(mopStatus == true) {
-    digitalWrite(servoExtend, HIGH)
-    digitalWrite(servoRetract, LOW)
+  if (mopStatus == 1) {
+    speed = 127;
+    analogWrite(RPWM, LOW);
+    analogWrite(LPWM, HIGH);
   }
   // retracts the mop
-  else if(mopStatus == false) {
-    digitalWrite(servoExtend, LOW)
-    digitalWrite(servoRetract, HIGH)
+  else if (mopStatus == 0) {
+    speed = 127;
+    analogWrite(RPWM, HIGH);
+    analogWrite(LPWM, LOW);
   }
-  // default status
+  // default status (off)
   else {
-    digitalWrite(servoExtend, HIGH)
-    digitalWrite(servoRetract, HIGH)
+    analogWrite(RPWM, LOW);
+    analogWrite(LPWM, LOW);
   }
 
-  // put your main code here, to run repeatedly:
-
+  delay(100);
 }
