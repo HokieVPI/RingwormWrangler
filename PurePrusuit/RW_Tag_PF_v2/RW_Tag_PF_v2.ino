@@ -12,13 +12,20 @@
 
 
 
-// Anchor Locations in Centimeters (x,y) z=0 
-const float Anchor1_x=1290;// cm 
+// // Anchor Locations in Centimeters (x,y) z=0 
+// const float Anchor1_x=1290;// cm 
+// const float Anchor1_y=0; // cm 
+// const float Anchor2_x=0; // cm 
+// const float Anchor2_y=1262; // cm 
+// const float Anchor3_x=1379; // cm 
+// const float Anchor3_y=2641; // cm 
+const float Anchor1_x=0;// cm 
 const float Anchor1_y=0; // cm 
-const float Anchor2_x=0; // cm 
-const float Anchor2_y=1262; // cm 
-const float Anchor3_x=1379; // cm 
-const float Anchor3_y=2641; // cm 
+const float Anchor2_x=478; // cm 
+const float Anchor2_y=0; // cm 
+const float Anchor3_x=0; // cm 
+const float Anchor3_y=519; // cm 
+
 // Initialize Distance Variables
 int dist_1 = 0;
 int dist_2 = 0;
@@ -39,7 +46,7 @@ double global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 5.0f; // cm 
+const float MinMovement = 10.0f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
@@ -49,7 +56,7 @@ bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
 static constexpr int waypoint_radius = 25; // cm
-static constexpr float look_ahead=100.0f; // cm
+static constexpr float look_ahead=75.0f; // cm 
 bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -84,14 +91,12 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 6;
+static constexpr int PATH_LENGTH = 4;
 static Waypoint path[PATH_LENGTH] = {
-  {200, 200},
-  {200, 2441},
-  {729, 2441},
-  {729, 200},
-  {1200, 200},
-  {1200, 2441},
+  {250, 100},
+  {350, 100},
+  {350, 300},
+  {400, 400},
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
@@ -200,7 +205,7 @@ while (miss_wp)  {
   }
   miss_wp=false;
 }
-  }
+  
 
   // // Fallback: no intersection found, aim at next waypoint directly
   // // could increase lookahead distance or 
@@ -209,9 +214,10 @@ while (miss_wp)  {
   //   result.gx = path[nextWp].wp_x;
   //   result.gy = path[nextWp].wp_y;
   //   result.found = true;
-  }
+  
 
   return result;
+}
 }
 //----------end pure pursuit functions----------//
 
@@ -430,7 +436,7 @@ void setup() {
   //start the session
   myController.start();
 
-  roboclaw.begin(38400);
+  // roboclaw.begin(38400);
 
 }
 
@@ -446,7 +452,7 @@ void loop() {
   }
 AdvancePathSegment(); //check if we reached the next waypoint
 if (PathComplete()){
-  roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // decelerate both motors to zero
+  // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // decelerate both motors to zero
     inRangingHandler = false;
   return;
 }
@@ -489,17 +495,17 @@ omega=K*velocity;
 leftMotor=(velocity-omega*trackWidth/2.0f)/wheelRadius; 
 rightMotor=(velocity+omega*trackWidth/2.0f)/wheelRadius; 
 
-// convert rad/s to counts/s
-int32_t leftQPPS = radPerSecToQPPS(leftMotor);
-int32_t rightQPPS = radPerSecToQPPS(rightMotor);
-// Debug output
-    Serial.print("Left QPPS: ");
-    Serial.println(leftQPPS);
-    Serial.print("Right QPPS: ");
-    Serial.println(rightQPPS);
+// // convert rad/s to counts/s
+// int32_t leftQPPS = radPerSecToQPPS(leftMotor);
+// int32_t rightQPPS = radPerSecToQPPS(rightMotor);
+// // Debug output
+//     Serial.print("Left QPPS: ");
+//     Serial.println(leftQPPS);
+//     Serial.print("Right QPPS: ");
+//     Serial.println(rightQPPS);
 
-//send to roboclaw with acceleration ramp 
-roboclaw.SpeedAccelM1M2(address,accel,leftQPPS,rightQPPS);
+// //send to roboclaw with acceleration ramp 
+// roboclaw.SpeedAccelM1M2(address,accel,leftQPPS,rightQPPS);
 
 }
 }
