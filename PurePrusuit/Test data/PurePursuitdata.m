@@ -184,4 +184,76 @@ xlim([0, 2133.6])
 ylim([0, 2641])
 hold off
 
+%% data2 1
 
+data2_1 = readcell("test_2_23_1");
+robotx = [];
+desiredHeading = [];
+globalHeading = [];
+roboty = [];
+goalx = [];
+goaly = [];
+curvatureCoeff = [];
+i = 1;
+while i <= height(data2_1)-9
+    goalx = [goalx; str2double(extractAfter(string(data2_1(i,1)),"Goal xy"))];
+    goaly = [goaly; cell2mat(data2_1(i+1,1))];
+    desiredHeading = [desiredHeading; cell2mat(data2_1(i+2,2))];
+    globalHeading = [globalHeading; cell2mat(data2_1(i+3,2))];
+    robotx = [robotx; cell2mat(data2_1(i+4,1))];
+    roboty = [roboty; cell2mat(data2_1(i+5,1))];
+    i = i+6;
+end
+desiredHeading = desiredHeading
+globalHeading = globalHeading
+robotx = robotx
+roboty = roboty
+goalx = goalx
+goaly = goaly
+figure
+hold on
+line(robotx,roboty)
+scatter(goalx,goaly,'Color','r')
+xlim([0, 2133.6])
+ylim([0, 2641])
+wx = [300; 300; 600; 900]
+wy = [1262; 1862; 2162; 1862]
+scatter(wx,wy,'magenta')
+hold off
+
+%% data2_2
+data2_1 = readcell("test_2_23_2");
+robotx = [];
+desiredHeading = [];
+globalHeading = [];
+roboty = [];
+goalx = [];
+goaly = [];
+curvatureCoeff = [];
+i = 2;
+while i <= height(data2_1)-9
+    goalx = [goalx; str2double(extractAfter(string(data2_1(i,1)),"Goal xy"))];
+    goaly = [goaly; cell2mat(data2_1(i+1,1))];
+    desiredHeading = [desiredHeading; cell2mat(data2_1(i+2,2))];
+    globalHeading = [globalHeading; cell2mat(data2_1(i+3,2))];
+    robotx = [robotx; cell2mat(data2_1(i+4,1))];
+    roboty = [roboty; cell2mat(data2_1(i+5,1))];
+    i = i+6;
+end
+desiredHeading = desiredHeading
+globalHeading = globalHeading
+robotx = robotx
+roboty = roboty
+goalx = goalx
+goaly = goaly
+figure
+hold on
+line(robotx,roboty)
+scatter(goalx,goaly,'Color','r')
+xlim([0, 2133.6])
+ylim([0, 2641])
+wx = [300; 300; 600; 900]
+wy = [1262; 1862; 2162; 1862]
+scatter(wx,wy,'magenta')
+
+hold off
