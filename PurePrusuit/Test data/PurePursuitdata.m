@@ -179,7 +179,7 @@ goaly = goaly
 figure
 hold on
 line(robotx,roboty)
-scatter(goalx,goaly,'Color','r')
+scatter(goalx,goaly,'Color','g')
 xlim([0, 2133.6])
 ylim([0, 2641])
 hold off
@@ -213,7 +213,7 @@ goaly = goaly
 figure
 hold on
 line(robotx,roboty)
-scatter(goalx,goaly,'Color','r')
+scatter(goalx,goaly,'g')
 xlim([0, 2133.6])
 ylim([0, 2641])
 wx = [300; 300; 600; 900]
@@ -249,7 +249,7 @@ goaly = goaly
 figure
 hold on
 line(robotx,roboty)
-scatter(goalx,goaly,'Color','r')
+scatter(goalx,goaly,'g')
 xlim([0, 2133.6])
 ylim([0, 2641])
 wx = [300; 300; 600; 900]
