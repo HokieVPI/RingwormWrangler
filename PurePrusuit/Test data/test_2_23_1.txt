@@ -1,0 +1,126 @@
+Goal xy300.00
+1862.00
+Desired Heading: 88.64
+Global Heading: 83.92
+277.64
+921.59
+Goal xy300.00
+1862.00
+Desired Heading: 87.86
+Global Heading: 95.44
+266.98
+979.21
+Goal xy300.00
+1862.00
+Desired Heading: 87.78
+Global Heading: 99.71
+268.81
+1058.13
+Goal xy300.00
+1862.00
+Desired Heading: 87.37
+Global Heading: 101.95
+267.99
+1165.01
+Goal xy300.00
+1366.45
+Desired Heading: 80.17
+Global Heading: 95.87
+287.19
+1292.56
+Goal xy300.00
+1490.59
+Desired Heading: 98.94
+Global Heading: 92.27
+311.65
+1416.50
+Goal xy300.00
+1585.56
+Desired Heading: 122.48
+Global Heading: 86.31
+340.28
+1522.29
+Goal xy300.00
+1662.97
+Desired Heading: 139.31
+Global Heading: 83.18
+356.87
+1614.08
+Goal xy300.00
+1262.00
+Desired Heading: -100.53
+Global Heading: 78.56
+376.18
+1671.73
+Goal xy300.00
+1262.00
+Desired Heading: -100.69
+Global Heading: 77.77
+383.16
+1702.42
+Goal xy300.00
+1262.00
+Desired Heading: -100.76
+Global Heading: 75.81
+389.75
+1734.45
+Goal xy300.00
+1862.00
+Desired Heading: 131.59
+Global Heading: 76.61
+388.05
+1762.78
+Goal xy300.00
+1862.00
+Desired Heading: 148.54
+Global Heading: 74.72
+398.97
+1801.45
+Goal xy300.00
+1862.00
+Desired Heading: 167.77
+Global Heading: 82.57
+411.45
+1837.84
+Goal xy385.78
+1947.78
+Desired Heading: 119.52
+Global Heading: 80.93
+422.74
+1882.52
+Goal xy432.79
+1994.79
+Desired Heading: 91.24
+Global Heading: 78.15
+434.41
+1919.81
+Goal xy472.45
+2034.45
+Desired Heading: 75.27
+Global Heading: 73.84
+453.38
+1961.92
+Goal xy494.28
+2056.28
+Desired Heading: 64.06
+Global Heading: 73.33
+461.48
+1988.83
+Goal xy512.54
+2074.54
+Desired Heading: 53.24
+Global Heading: 71.33
+467.65
+2014.45
+Goal xy528.92
+2090.92
+Desired Heading: 45.64
+Global Heading: 69.98
+476.48
+2037.31
+Goal xy300.00
+1862.00
+Desired Heading: -163.45
+Global Heading: 70.65
+613.03
+1955.01

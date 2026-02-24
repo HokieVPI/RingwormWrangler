@@ -12,19 +12,19 @@
 
 
 
-// // Anchor Locations in Centimeters (x,y) z=0 
-// const float Anchor1_x=1290;// cm 
-// const float Anchor1_y=0; // cm 
-// const float Anchor2_x=0; // cm 
-// const float Anchor2_y=1262; // cm 
-// const float Anchor3_x=1379; // cm 
-// const float Anchor3_y=2641; // cm 
-const float Anchor1_x=0;// cm 
+// Anchor Locations in Centimeters (x,y) z=0 
+const float Anchor1_x=1290;// cm 
 const float Anchor1_y=0; // cm 
-const float Anchor2_x=478; // cm 
-const float Anchor2_y=0; // cm 
-const float Anchor3_x=0; // cm 
-const float Anchor3_y=519; // cm 
+const float Anchor2_x=0; // cm 
+const float Anchor2_y=1262; // cm 
+const float Anchor3_x=1379; // cm 
+const float Anchor3_y=2641; // cm 
+// const float Anchor1_x=0;// cm 
+// const float Anchor1_y=0; // cm 
+// const float Anchor2_x=478; // cm 
+// const float Anchor2_y=0; // cm 
+// const float Anchor3_x=0; // cm 
+// const float Anchor3_y=519; // cm 
 
 // Initialize Distance Variables
 int dist_1 = 0;
@@ -46,18 +46,18 @@ double global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 10.0f; // cm 
+const float MinMovement = 1.0f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
 int head_index = 0;
 int tail_index = CIRCULAR_BUFFER_SIZE-1;
-bool inRangingHandler = false;
+volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
-static constexpr int waypoint_radius = 25; // cm
+static constexpr int waypoint_radius = 150; // cm
 static constexpr float look_ahead=75.0f; // cm 
-bool newPosition = false;
+volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
 float L_d; // Look-Ahead Distance in cm 
@@ -70,10 +70,10 @@ static constexpr int trackWidth =86;  // Wheel to Wheel in cm
 float leftMotor; 
 float rightMotor; 
 // Roboclaw serial and constants 
-RoboClaw roboclaw(&Serial1,10000);
-#define address 0x80 
+// RoboClaw roboclaw(&Serial1,10000);
+// #define address 0x80 
 static constexpr int Encoder_CPR = 300; 
-uint32_t accel = 10000; // acceleration in counts/s^2
+// uint32_t accel = 10000; // acceleration in counts/s^2
 
 // ----------- Functions----------//
 
@@ -93,10 +93,10 @@ struct GoalResult {
 //  establish path length and waypoints
 static constexpr int PATH_LENGTH = 4;
 static Waypoint path[PATH_LENGTH] = {
-  {250, 100},
-  {350, 100},
-  {350, 300},
-  {400, 400},
+  {300, 1262},
+  {300, 1862},
+  {600, 2162},
+  {900, 1862},
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
@@ -203,8 +203,8 @@ while (miss_wp)  {
       return result;  // first valid hit on the earliest forward segment
     }
   }
+  }
   miss_wp=false;
-}
   
 
   // // Fallback: no intersection found, aim at next waypoint directly
@@ -219,6 +219,7 @@ while (miss_wp)  {
   return result;
 }
 }
+
 //----------end pure pursuit functions----------//
 
 //---------- start Roboclaw functions----------//
@@ -447,12 +448,14 @@ void loop() {
 #endif
 
   while(inRangingHandler || !newPosition) {
-    
+
     delay(10);
   }
-AdvancePathSegment(); //check if we reached the next waypoint
+  newPosition = false;  // consumed; wait for next update before next iteration
+  AdvancePathSegment(); //check if we reached the next waypoint
 if (PathComplete()){
   // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // decelerate both motors to zero
+  Serial.println("Path Complete");
     inRangingHandler = false;
   return;
 }
@@ -462,9 +465,13 @@ GoalResult goal =findLookaheadGoal(); // compute goal point
 
     delta_x=goal.gx-currentX_global; // differnce from goal point to current position 
     delta_y=goal.gy-currentY_global; // differnce from goal point to current position
+
 // Find Look-ahead Distance and heading to goal
 float angleToGoal = atan2f(delta_y, delta_x); // radians
 // For debug, convert desired heading to degrees
+Serial.print("Goal xy");
+Serial.println(goal.gx);
+Serial.println(goal.gy);
 float DesiredHeading = radiansToDegrees(angleToGoal);
 Serial.print("Desired Heading: ");
 Serial.println(DesiredHeading);
@@ -474,22 +481,22 @@ Serial.println(GlobalHeading);
   Serial.println(currentX_global);
   Serial.println(currentY_global);
 
-// Look-ahead distance from current point 
-L_d2=delta_x*delta_x+delta_y*delta_y;  // Look-ahead Distance Squared 
-L_d=sqrt(L_d2); // Look-ahead distance
+// // Look-ahead distance from current point 
+// L_d2=delta_x*delta_x+delta_y*delta_y;  // Look-ahead Distance Squared 
+// L_d=sqrt(L_d2); // Look-ahead distance
 
-// Compute the angle difference (alpha) in radians
-float alpha = wrapAnglePi(angleToGoal - global_azimuth);
+// // Compute the angle difference (alpha) in radians
+// float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
-// Compute the Curvature Coeff (K)
-if (L_d < 1.0f) {
-  K=0.0f;
-}else{
-K=2.0f*sinf(alpha)/L_d; 
+// // Compute the Curvature Coeff (K)
+// if (L_d < 1.0f) {
+//   K=0.0f;
+// }else{
+// K=2.0f*sinf(alpha)/L_d; 
 
-Serial.print("Curvature Coeff: ");
-Serial.println(K);
-omega=K*velocity; 
+// Serial.print("Curvature Coeff: ");
+// Serial.println(K);
+// omega=K*velocity; 
 
 //Find Motor Velocities 
 leftMotor=(velocity-omega*trackWidth/2.0f)/wheelRadius; 
@@ -507,5 +514,5 @@ rightMotor=(velocity+omega*trackWidth/2.0f)/wheelRadius;
 // //send to roboclaw with acceleration ramp 
 // roboclaw.SpeedAccelM1M2(address,accel,leftQPPS,rightQPPS);
 
-}
+// }
 }
