@@ -10,12 +10,13 @@
  */
 
 // Anchor Locations in Centimeters (x,y) z=0 
-const float Anchor1_x=1;// cm 
-const float Anchor1_y=1; // cm 
-const float Anchor2_x=1; // cm 
-const float Anchor2_y=213; // cm 
-const float Anchor3_x=182; // cm 
-const float Anchor3_y=1; // cm 
+// Anchor Locations in Centimeters (x,y) z=0 
+const float Anchor1_x=1290;// cm 
+const float Anchor1_y=0; // cm 
+const float Anchor2_x=0; // cm 
+const float Anchor2_y=1262; // cm 
+const float Anchor3_x=1379; // cm 
+const float Anchor3_y=2641; // cm 
 
 bool anchor1_received = false;
 bool anchor2_received = false;

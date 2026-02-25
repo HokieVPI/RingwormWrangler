@@ -90,135 +90,135 @@ struct GoalResult {
   float gy;      // goal y in cm
   bool  found;   // true if circle intersected the path
 };
-//  establish path length and waypoints
-static constexpr int PATH_LENGTH = 4;
-static Waypoint path[PATH_LENGTH] = {
-  {300, 1262},
-  {300, 1862},
-  {600, 2162},
-  {900, 1862},
-};
-// functions to get waypoint x and y coordinates and path length
-float getWaypointX(int j){
-  return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
-}
-float getWaypointY(int j){
-  return (j>=0 && j<PATH_LENGTH) ? path[j].wp_y : 0.0f;
-}
+// //  establish path length and waypoints
+// static constexpr int PATH_LENGTH = 4;
+// static Waypoint path[PATH_LENGTH] = {
+//   {300, 1262},
+//   {300, 1862},
+//   {600, 2162},
+//   {900, 1862},
+// };
+// // functions to get waypoint x and y coordinates and path length
+// float getWaypointX(int j){
+//   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
+// }
+// float getWaypointY(int j){
+//   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_y : 0.0f;
+// }
 
-int getPathLength(){
-  return PATH_LENGTH;
-}
-// establish path state 
-static int pathSegIdx = 0; // current path segment index
+// int getPathLength(){
+//   return PATH_LENGTH;
+// }
+// // establish path state 
+// static int pathSegIdx = 0; // current path segment index
 
-void advancePathSegment(){
-  if(pathSegIdx < PATH_LENGTH - 1){
-    pathSegIdx++;
-  }
+// void advancePathSegment(){
+//   if(pathSegIdx < PATH_LENGTH - 1){
+//     pathSegIdx++;
+//   }
 
-}
-int getCurrentPathSegmentIndex(){
-  return pathSegIdx;
-}
-bool PathComplete(){
-  return
-   pathSegIdx == PATH_LENGTH - 1;
-}
+// }
+// int getCurrentPathSegmentIndex(){
+//   return pathSegIdx;
+// }
+// bool PathComplete(){
+//   return
+//    pathSegIdx == PATH_LENGTH - 1;
+// }
 
-// advance when the tag is within the waypoint radius of the next waypoint
-void AdvancePathSegment(){
-  if(!PathComplete()){
+// // advance when the tag is within the waypoint radius of the next waypoint
+// void AdvancePathSegment(){
+//   if(!PathComplete()){
 
-    int nextWaypoint=pathSegIdx+1;
-    float deltaX=getWaypointX(nextWaypoint)-currentX_global;
-    float deltaY=getWaypointY(nextWaypoint)-currentY_global;
-    float distanceToNextWaypoint_sq=deltaX*deltaX+deltaY*deltaY;
+//     int nextWaypoint=pathSegIdx+1;
+//     float deltaX=getWaypointX(nextWaypoint)-currentX_global;
+//     float deltaY=getWaypointY(nextWaypoint)-currentY_global;
+//     float distanceToNextWaypoint_sq=deltaX*deltaX+deltaY*deltaY;
 
-    if (distanceToNextWaypoint_sq <= waypoint_radius * waypoint_radius){
-      advancePathSegment();
-    }
-    // could add in something to handle overshoot of waypoint radius
-  }
-}
-//----------end waypoint handling functions----------//
+//     if (distanceToNextWaypoint_sq <= waypoint_radius * waypoint_radius){
+//       advancePathSegment();
+//     }
+//     // could add in something to handle overshoot of waypoint radius
+//   }
+// }
+// //----------end waypoint handling functions----------//
 
-//---------- start pure pursuit functions----------//
+// //---------- start pure pursuit functions----------//
 
 
-// Find intersection of lookahead circle with the path ahead.
-// Uses: currentX_global, currentY_global, look_ahead, path[], pathSegIdx, PATH_LENGTH
-GoalResult findLookaheadGoal() {
-  GoalResult result;
-  result.found = false;
+// // Find intersection of lookahead circle with the path ahead.
+// // Uses: currentX_global, currentY_global, look_ahead, path[], pathSegIdx, PATH_LENGTH
+// GoalResult findLookaheadGoal() {
+//   GoalResult result;
+//   result.found = false;
 
-  float Lsq = look_ahead * look_ahead;
+//   float Lsq = look_ahead * look_ahead;
 
-bool miss_wp;
-miss_wp = true;
+// bool miss_wp;
+// miss_wp = true;
 
-while (miss_wp)  {
-  // Search each segment from pathSegIdx forward
-  for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
+// while (miss_wp)  {
+//   // Search each segment from pathSegIdx forward
+//   for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
 
-    // Segment endpoints A -> B from existing path[] array
-    float dsx = path[seg + 1].wp_x - path[seg].wp_x;   // segment direction x
-    float dsy = path[seg + 1].wp_y - path[seg].wp_y;   // segment direction y
+//     // Segment endpoints A -> B from existing path[] array
+//     float dsx = path[seg + 1].wp_x - path[seg].wp_x;   // segment direction x
+//     float dsy = path[seg + 1].wp_y - path[seg].wp_y;   // segment direction y
 
-    float fx = path[seg].wp_x - (float)currentX_global;  // segment start relative to robot x
-    float fy = path[seg].wp_y - (float)currentY_global;  // segment start relative to robot y
+//     float fx = path[seg].wp_x - (float)currentX_global;  // segment start relative to robot x
+//     float fy = path[seg].wp_y - (float)currentY_global;  // segment start relative to robot y
 
-    // Quadratic coefficients for circle-segment intersection
-    float qa = dsx * dsx + dsy * dsy;
-    float qb = 2.0f * (fx * dsx + fy * dsy);
-    float qc = (fx * fx + fy * fy) - Lsq;
+//     // Quadratic coefficients for circle-segment intersection
+//     float qa = dsx * dsx + dsy * dsy;
+//     float qb = 2.0f * (fx * dsx + fy * dsy);
+//     float qc = (fx * fx + fy * fy) - Lsq;
 
-    float discriminant = qb * qb - 4.0f * qa * qc;
+//     float discriminant = qb * qb - 4.0f * qa * qc;
 
-    if (discriminant < 0.0f){ 
-      result.gx = path[seg].wp_x;
-      result.gy = path[seg].wp_y;
-      result.found = true;
-      return result;  // first valid hit on the earliest forward segment
-      miss_wp=false; // circle misses this segment
-    } else{
-    float sqrtDisc = sqrtf(discriminant);
+//     if (discriminant < 0.0f){ 
+//       result.gx = path[seg].wp_x;
+//       result.gy = path[seg].wp_y;
+//       result.found = true;
+//       return result;  // first valid hit on the earliest forward segment
+//       miss_wp=false; // circle misses this segment
+//     } else{
+//     float sqrtDisc = sqrtf(discriminant);
 
-    // Two candidate parameter values along the segment (0 = start, 1 = end)
-    float t1 = (-qb - sqrtDisc) / (2.0f * qa);
-    float t2 = (-qb + sqrtDisc) / (2.0f * qa);
+//     // Two candidate parameter values along the segment (0 = start, 1 = end)
+//     float t1 = (-qb - sqrtDisc) / (2.0f * qa);
+//     float t2 = (-qb + sqrtDisc) / (2.0f * qa);
 
-    // Pick the largest valid t (furthest forward on segment)
-    float bestT = -1.0f;
-    if (t2 >= 0.0f && t2 <= 1.0f) {
-      bestT = t2;
-    } else if (t1 >= 0.0f && t1 <= 1.0f) {
-      bestT = t1;
-    }
+//     // Pick the largest valid t (furthest forward on segment)
+//     float bestT = -1.0f;
+//     if (t2 >= 0.0f && t2 <= 1.0f) {
+//       bestT = t2;
+//     } else if (t1 >= 0.0f && t1 <= 1.0f) {
+//       bestT = t1;
+//     }
 
-    if (bestT >= 0.0f) {
-      result.gx = path[seg].wp_x + bestT * dsx;
-      result.gy = path[seg].wp_y + bestT * dsy;
-      result.found = true;
-      return result;  // first valid hit on the earliest forward segment
-    }
-  }
-  }
-  miss_wp=false;
+//     if (bestT >= 0.0f) {
+//       result.gx = path[seg].wp_x + bestT * dsx;
+//       result.gy = path[seg].wp_y + bestT * dsy;
+//       result.found = true;
+//       return result;  // first valid hit on the earliest forward segment
+//     }
+//   }
+//   }
+//   miss_wp=false;
   
 
-  // // Fallback: no intersection found, aim at next waypoint directly
-  // // could increase lookahead distance or 
-  // if (!result.found) {
-  //   int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
-  //   result.gx = path[nextWp].wp_x;
-  //   result.gy = path[nextWp].wp_y;
-  //   result.found = true;
+//   // // Fallback: no intersection found, aim at next waypoint directly
+//   // // could increase lookahead distance or 
+//   // if (!result.found) {
+//   //   int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
+//   //   result.gx = path[nextWp].wp_x;
+//   //   result.gy = path[nextWp].wp_y;
+//   //   result.found = true;
   
 
-  return result;
-}
-}
+//   return result;
+// }
+// }
 
 //----------end pure pursuit functions----------//
 
@@ -352,9 +352,9 @@ float prevY=0.0f;
     currentX_global = currentX;
     currentY_global = currentY; 
   // Serial.print("( ");
-  // Serial.println(currentX);
+  Serial.println(currentX_global);
   // Serial.print(" , ");
-  // Serial.println(currentY);
+  Serial.println(currentY_global);
   // Serial.print(") ");
 // ------------ End Weighted Average ------------ //
 
@@ -447,39 +447,39 @@ void loop() {
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
 
-  while(inRangingHandler || !newPosition) {
+//   while(inRangingHandler || !newPosition) {
 
-    delay(10);
-  }
-  newPosition = false;  // consumed; wait for next update before next iteration
-  AdvancePathSegment(); //check if we reached the next waypoint
-if (PathComplete()){
-  // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // decelerate both motors to zero
-  Serial.println("Path Complete");
-    inRangingHandler = false;
-  return;
-}
+//     delay(10);
+//   }
+//   newPosition = false;  // consumed; wait for next update before next iteration
+//   AdvancePathSegment(); //check if we reached the next waypoint
+// if (PathComplete()){
+//   // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // decelerate both motors to zero
+//   Serial.println("Path Complete");
+//     inRangingHandler = false;
+//   return;
+// }
 
-GoalResult goal =findLookaheadGoal(); // compute goal point 
+// GoalResult goal =findLookaheadGoal(); // compute goal point 
 
 
-    delta_x=goal.gx-currentX_global; // differnce from goal point to current position 
-    delta_y=goal.gy-currentY_global; // differnce from goal point to current position
+//     delta_x=goal.gx-currentX_global; // differnce from goal point to current position 
+//     delta_y=goal.gy-currentY_global; // differnce from goal point to current position
 
-// Find Look-ahead Distance and heading to goal
-float angleToGoal = atan2f(delta_y, delta_x); // radians
-// For debug, convert desired heading to degrees
-Serial.print("Goal xy");
-Serial.println(goal.gx);
-Serial.println(goal.gy);
-float DesiredHeading = radiansToDegrees(angleToGoal);
-Serial.print("Desired Heading: ");
-Serial.println(DesiredHeading);
-float GlobalHeading = radiansToDegrees(global_azimuth);
-Serial.print("Global Heading: ");
-Serial.println(GlobalHeading);
-  Serial.println(currentX_global);
-  Serial.println(currentY_global);
+// // Find Look-ahead Distance and heading to goal
+// float angleToGoal = atan2f(delta_y, delta_x); // radians
+// // For debug, convert desired heading to degrees
+// Serial.print("Goal xy");
+// Serial.println(goal.gx);
+// Serial.println(goal.gy);
+// float DesiredHeading = radiansToDegrees(angleToGoal);
+// Serial.print("Desired Heading: ");
+// Serial.println(DesiredHeading);
+// float GlobalHeading = radiansToDegrees(global_azimuth);
+// Serial.print("Global Heading: ");
+// Serial.println(GlobalHeading);
+//   Serial.println(currentX_global);
+//   Serial.println(currentY_global);
 
 // // Look-ahead distance from current point 
 // L_d2=delta_x*delta_x+delta_y*delta_y;  // Look-ahead Distance Squared 
@@ -498,9 +498,9 @@ Serial.println(GlobalHeading);
 // Serial.println(K);
 // omega=K*velocity; 
 
-//Find Motor Velocities 
-leftMotor=(velocity-omega*trackWidth/2.0f)/wheelRadius; 
-rightMotor=(velocity+omega*trackWidth/2.0f)/wheelRadius; 
+// //Find Motor Velocities 
+// leftMotor=(velocity-omega*trackWidth/2.0f)/wheelRadius; 
+// rightMotor=(velocity+omega*trackWidth/2.0f)/wheelRadius; 
 
 // // convert rad/s to counts/s
 // int32_t leftQPPS = radPerSecToQPPS(leftMotor);
