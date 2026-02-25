@@ -1,7 +1,9 @@
-const int RPWM = 11;
-const int LPWM = 12;
+const int RPWM = 9;
+const int LPWM = 10;
 int speed = 0;
 int mopStatus = 0;
+int Right = LOW;
+int Left = LOW;
 
 void setup() {
   pinMode(RPWM, OUTPUT);
@@ -27,20 +29,29 @@ void loop() {
   // extends the mop
   if (mopStatus == 1) {
     speed = 127;
-    analogWrite(RPWM, LOW);
-    analogWrite(LPWM, HIGH);
+    digitalWrite(RPWM, LOW);
+    digitalWrite(LPWM, HIGH);
+    delay(1000);
+    mopStatus = 0; 
   }
   // retracts the mop
   else if (mopStatus == 0) {
     speed = 127;
-    analogWrite(RPWM, HIGH);
-    analogWrite(LPWM, LOW);
+    digitalWrite(RPWM, HIGH);
+    digitalWrite(LPWM, LOW);
+    delay(1000);
   }
   // default status (off)
   else {
-    analogWrite(RPWM, LOW);
-    analogWrite(LPWM, LOW);
+    digitalWrite(RPWM, LOW);
+    digitalWrite(LPWM, LOW);
+    delay(1000);
   }
+  Right = digitalRead(RPWM);
+  Left = digitalRead(LPWM);
+  Serial.print(Right);
+  Serial.print(Left);
+  Serial.print(mopStatus);
 
   delay(100);
 }

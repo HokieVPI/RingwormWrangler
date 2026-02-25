@@ -128,13 +128,13 @@ while i <= height(data4)-7
     goaly = [goaly; data4(i+8,1)];
     i = i+9;
 end
-desiredHeading = table2array(desiredHeading)
-globalHeading = table2array(globalHeading)
-robotx = table2array(robotx)
-roboty = table2array(roboty)
-curvatureCoeff = table2array(curvatureCoeff)
-goalx = table2array(goalx)
-goaly = table2array(goaly)
+desiredHeading = table2array(desiredHeading);
+globalHeading = table2array(globalHeading);
+robotx = table2array(robotx);
+roboty = table2array(roboty);
+curvatureCoeff = table2array(curvatureCoeff);
+goalx = table2array(goalx);
+goaly = table2array(goaly);
 figure
 hold on
 line(robotx,roboty)
@@ -170,12 +170,12 @@ while i <= height(data5)-9
     idk2 = [idk2; cell2mat(data5(i+7))];
     i = i+8;
 end
-desiredHeading = desiredHeading
-globalHeading = globalHeading
-robotx = robotx
-roboty = roboty
-goalx = goalx
-goaly = goaly
+desiredHeading = desiredHeading;
+globalHeading = globalHeading;
+robotx = robotx;
+roboty = roboty;
+goalx = goalx;
+goaly = goaly;
 figure
 hold on
 line(robotx,roboty)
@@ -204,12 +204,12 @@ while i <= height(data2_1)-9
     roboty = [roboty; cell2mat(data2_1(i+5,1))];
     i = i+6;
 end
-desiredHeading = desiredHeading
-globalHeading = globalHeading
-robotx = robotx
-roboty = roboty
-goalx = goalx
-goaly = goaly
+desiredHeading = desiredHeading;
+globalHeading = globalHeading;
+robotx = robotx;
+roboty = roboty;
+goalx = goalx;
+goaly = goaly;
 figure
 hold on
 line(robotx,roboty)
@@ -240,12 +240,12 @@ while i <= height(data2_1)-9
     roboty = [roboty; cell2mat(data2_1(i+5,1))];
     i = i+6;
 end
-desiredHeading = desiredHeading
-globalHeading = globalHeading
-robotx = robotx
-roboty = roboty
-goalx = goalx
-goaly = goaly
+desiredHeading = desiredHeading;
+globalHeading = globalHeading;
+robotx = robotx;
+roboty = roboty;
+goalx = goalx;
+goaly = goaly;
 figure
 hold on
 line(robotx,roboty)
@@ -255,5 +255,248 @@ ylim([0, 2641])
 wx = [300; 300; 600; 900]
 wy = [1262; 1862; 2162; 1862]
 scatter(wx,wy,'magenta')
-
+mapArea = [0 0;
+    70*2.54*12 0;
+    70*2.54*12 32.4*2.54*12;
+    (70-2)*2.54*12 (32.4)*2.54*12;
+    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+    0 (32.4+19.81+14.75+20)*2.54*12;
+    0 0]
+plot(mapArea(:,1),mapArea(:,2))
 hold off
+%% data3 1
+
+data3_1 = importdata("test_2_24_1")
+data3_1 = data3_1.data
+robotx = [];
+roboty = [];
+i = 1;
+while i <= height(data3_1)-2
+    robotx = [robotx; data3_1(i,1)];
+    roboty = [roboty; data3_1(i+1,1)];
+    i = i+2;
+end
+robotx = robotx;
+roboty = roboty;
+figure
+hold on
+scatter(robotx,roboty)
+xlim([0, 2133.6])
+ylim([0, 2641])
+mapArea = [0 0;
+    70*2.54*12 0;
+    70*2.54*12 32.4*2.54*12;
+    (70-2)*2.54*12 (32.4)*2.54*12;
+    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+    0 (32.4+19.81+14.75+20)*2.54*12;
+    0 0]
+plot(mapArea(:,1),mapArea(:,2))
+hold off
+figure
+subplot(1,2,1)
+histogram(robotx)
+subplot(1,2,2)
+histogram(roboty)
+
+%% data3 2
+
+data3_2 = importdata("test_2_24_2")
+data3_2 = data3_2.data
+robotx = [];
+roboty = [];
+i = 1;
+while i <= height(data3_2)-2
+    robotx = [robotx; data3_2(i,1)];
+    roboty = [roboty; data3_2(i+1,1)];
+    i = i+2;
+end
+robotx = robotx;
+roboty = roboty;
+figure
+hold on
+scatter(robotx,roboty)
+xlim([0, 2133.6])
+ylim([0, 2641])
+mapArea = [0 0;
+    70*2.54*12 0;
+    70*2.54*12 32.4*2.54*12;
+    (70-2)*2.54*12 (32.4)*2.54*12;
+    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+    0 (32.4+19.81+14.75+20)*2.54*12;
+    0 0];
+plot(mapArea(:,1),mapArea(:,2))
+hold off
+figure
+subplot(1,2,1)
+histogram(robotx)
+subplot(1,2,2)
+histogram(roboty)
+
+%% data3 3
+
+data3_2 = importdata("test_2_24_3")
+data3_2 = data3_2.data
+robotx = [];
+roboty = [];
+i = 1;
+while i <= height(data3_2)-2
+    robotx = [robotx; data3_2(i,1)];
+    roboty = [roboty; data3_2(i+1,1)];
+    i = i+2;
+end
+robotx = robotx;
+roboty = roboty;
+figure
+hold on
+scatter(robotx,roboty)
+xlim([0, 2133.6])
+ylim([0, 2641])
+mapArea = [0 0;
+    70*2.54*12 0;
+    70*2.54*12 32.4*2.54*12;
+    (70-2)*2.54*12 (32.4)*2.54*12;
+    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+    0 (32.4+19.81+14.75+20)*2.54*12;
+    0 0];
+plot(mapArea(:,1),mapArea(:,2))
+hold off
+figure
+subplot(1,2,1)
+histogram(robotx)
+subplot(1,2,2)
+histogram(roboty)
+
+
+
+%% data3 4
+
+data3_4 = importdata("test_2_24_4_60s")
+data3_4 = data3_4.data
+robotx = [];
+roboty = [];
+i = 1;
+while i <= height(data3_4)-2
+    robotx = [robotx; data3_4(i,1)];
+    roboty = [roboty; data3_4(i+1,1)];
+    i = i+2;
+end
+robotx = robotx;
+roboty = roboty;
+figure
+hold on
+scatter(robotx,roboty)
+xlim([0, 2133.6])
+ylim([0, 2641])
+mapArea = [0 0;
+    70*2.54*12 0;
+    70*2.54*12 32.4*2.54*12;
+    (70-2)*2.54*12 (32.4)*2.54*12;
+    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+    0 (32.4+19.81+14.75+20)*2.54*12;
+    0 0];
+plot(mapArea(:,1),mapArea(:,2))
+hold off
+figure
+subplot(1,2,1)
+histogram(robotx)
+subplot(1,2,2)
+histogram(roboty)
+
+%% data3 5
+
+data3_5 = importdata("test_2_24_6")
+data3_5 = data3_5.data
+robotx = [];
+roboty = [];
+i = 1;
+while i <= height(data3_5)-2
+    robotx = [robotx; data3_5(i,1)];
+    roboty = [roboty; data3_5(i+1,1)];
+    i = i+2;
+end
+robotx = robotx;
+roboty = roboty;
+figure
+hold on
+scatter(robotx,roboty)
+xlim([0, 2133.6])
+ylim([0, 2641])
+mapArea = [0 0;
+    70*2.54*12 0;
+    70*2.54*12 32.4*2.54*12;
+    (70-2)*2.54*12 (32.4)*2.54*12;
+    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+    0 (32.4+19.81+14.75+20)*2.54*12;
+    0 0];
+plot(mapArea(:,1),mapArea(:,2))
+scatter(173*2.54,93*2.54,'magenta',"filled")
+hold off
+figure
+subplot(1,2,1)
+histogram(robotx)
+subplot(1,2,2)
+histogram(roboty)
+
+%% data3 6
+
+data3_6= importdata("test_2_24_5")
+data3_6 = data3_6.data
+robotx = [];
+roboty = [];
+i = 1;
+while i <= height(data3_6)-2
+    robotx = [robotx; data3_6(i,1)];
+    roboty = [roboty; data3_6(i+1,1)];
+    i = i+2;
+end
+robotx = robotx;
+roboty = roboty;
+figure
+hold on
+scatter(robotx,roboty)
+xlim([0, 2133.6])
+ylim([0, 2641])
+mapArea = [0 0;
+    70*2.54*12 0;
+    70*2.54*12 32.4*2.54*12;
+    (70-2)*2.54*12 (32.4)*2.54*12;
+    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+    0 (32.4+19.81+14.75+20)*2.54*12;
+    0 0];
+plot(mapArea(:,1),mapArea(:,2))
+scatter(211*2.54,148*2.54,'magenta',"filled")
+hold off
+figure
+subplot(1,2,1)
+histogram(robotx)
+subplot(1,2,2)
+histogram(roboty)
+
