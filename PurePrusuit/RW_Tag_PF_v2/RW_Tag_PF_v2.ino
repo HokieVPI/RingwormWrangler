@@ -269,7 +269,8 @@ void rangingHandler(UWBRangingData &rangingData) {
   }
   
 if (!anchor1_received || !anchor2_received || !anchor3_received) {
-  inRangingHandler = false;
+  Serial.print("bad anchor connection");
+    inRangingHandler = false;
   return;
 }else 
 {
