@@ -3,20 +3,23 @@
 // Global Variables 
 RoboClaw roboclaw(&Serial1,10000); // initialize the roboclaw object (10000 is the timeout)
 #define address 0x80 
-uint32_t accel = 600; // acceleration in counts/s^2
-static constexpr int Encoder_CPR = 300; // count per rev of encoder 
-static constexpr float Kp = 1.0;
-static constexpr float Ki = 0.5;
-static constexpr float Kd = 0.25;
-static const float leftMotor = 3.0f;// rad/s
-static const float rightMotor = 3.0f;// rad/s
+uint32_t accel = 25000; // acceleration in counts/s^2
+// static constexpr int Encoder_CPR = 300; // count per rev of encoder
+static constexpr int left_QPPS = 42570;
+static constexpr int right_QPPS = 44220;  
+static constexpr float Kp = 1.54;
+static constexpr float Ki = 0.24;
+static constexpr float Kd = 0;
+// static const float leftMotor = 3.0f;// rad/s
+// static const float rightMotor = 3.0f;// rad/s
+static const float runSpeed  = 0.30f; // 30% of max QPPS
 static const float MaxOmega = 10.0f; // max rotational speed in rad/s
 
 //---------- start Roboclaw functions----------//
-int32_t radPerSecToQPPS(float radPerSec){
-    // counts/sec = (rad/sec) * (counts/rev) / (2*pi rad/rev)
-    return (int32_t)(radPerSec * Encoder_CPR / (2.0f * PI));
-  }
+// int32_t radPerSecToQPPS(float radPerSec){
+//     // counts/sec = (rad/sec) * (counts/rev) / (2*pi rad/rev)
+//     return (int32_t)(radPerSec * Encoder_CPR / (2.0f * PI));
+//   }
 
   // Print error flags, driver temp, main battery (and optional encoders/speeds)
 void printRoboClawStatus() {
@@ -59,33 +62,81 @@ void setup() {
 Serial.begin(115200);
 roboclaw.begin(38400);
 
-uint32_t qpps;
-qpps = radPerSecToQPPS(MaxOmega);
+// uint32_t qpps;
+// qpps = radPerSecToQPPS(MaxOmega);
 
-roboclaw.SetM1VelocityPID(address,Ki,Kp,Kd,qpps);
-roboclaw.SetM2VelocityPID(address,Ki,Kp,Kd,qpps);
+roboclaw.SetM1VelocityPID(address,Ki,Kp,Kd,left_QPPS);
+roboclaw.SetM2VelocityPID(address,Ki,Kp,Kd,right_QPPS);
 
 
 }
+// void runPhase(uint32_t duration) {
+//     uint32_t start = millis();
+//     uint32_t lastPrint = 0;
+//     while (millis() - start < duration) {
+//         if (millis() - lastPrint >= 500) {
+//             lastPrint = millis();
+//             printRoboClawStatus();
+//         }
+//     }
+// }
 
-// Loop 
+// // Loop 
+// void loop() {
+//     int32_t base       = radPerSecToQPPS(baseSpeed);
+//     int32_t boosted    = radPerSecToQPPS(baseSpeed * turnBoost);
+
+//     // Phase 1: Both motors forward for 2 sec
+//     Serial.println("Phase 1: Forward");
+//     roboclaw.SpeedAccelM1(address, accel, base);
+//     roboclaw.SpeedAccelM2(address, accel, base);
+//     runPhase(2000);
+
+//     // Phase 2: Left motor 10% faster for 1 sec (turns right)
+//     Serial.println("Phase 2: Left faster");
+//     roboclaw.SpeedAccelM1(address, accel, boosted);
+//     roboclaw.SpeedAccelM2(address, accel, base);
+//     runPhase(1000);
+
+//     // Phase 3: Right motor 10% faster for 1 sec (turns left)
+//     Serial.println("Phase 3: Right faster");
+//     roboclaw.SpeedAccelM1(address, accel, base);
+//     roboclaw.SpeedAccelM2(address, accel, boosted);
+//     runPhase(1000);
+
+//     // Phase 4: Both motors same speed for 2 sec
+//     Serial.println("Phase 4: Forward");
+//     roboclaw.SpeedAccelM1(address, accel, base);
+//     roboclaw.SpeedAccelM2(address, accel, base);
+//     runPhase(2000);
+
+//     // Phase 5: Stop
+//     Serial.println("Stopped.");
+//     roboclaw.SpeedM1(address, 0);
+//     roboclaw.SpeedM2(address, 0);
+
+//     while (true) {} // halt
+// }
+
+
 void loop() {
     static uint32_t lastPrint = 0;
+    int32_t leftBase = (int32_t)(left_QPPS  * runSpeed);
+    int32_t rightBase = (int32_t)(right_QPPS * runSpeed);
+    // int32_t leftQPPS  = radPerSecToQPPS(leftMotor);
+    // int32_t rightQPPS = radPerSecToQPPS(rightMotor);
   
-    int32_t leftQPPS  = radPerSecToQPPS(leftMotor);
-    int32_t rightQPPS = radPerSecToQPPS(rightMotor);
-  
-    roboclaw.SpeedAccelM1(address, accel, leftQPPS);
-    roboclaw.SpeedAccelM2(address, accel, rightQPPS);
+    roboclaw.SpeedAccelM1(address, accel, leftBase);
+    roboclaw.SpeedAccelM2(address, accel, rightBase);
   
     if (millis() - lastPrint >= 500) {
       lastPrint = millis();
       printRoboClawStatus();
     }
   
-    delay(2000);
-    roboclaw.SpeedM1(address, 0);
-    roboclaw.SpeedM2(address, 0);
+    delay(4000);
+    roboclaw.SpeedAccelM1(address, 0);
+    roboclaw.SpeedAccelM2(address, 0);
     delay(1000);
   }
 
