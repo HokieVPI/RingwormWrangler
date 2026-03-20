@@ -13,12 +13,13 @@
 
 
 // Anchor Locations in Centimeters (x,y) z=0 
-const float Anchor1_x=1290;// cm 
-const float Anchor1_y=0; // cm 
-const float Anchor2_x=0; // cm 
-const float Anchor2_y=1262; // cm 
-const float Anchor3_x=1379; // cm 
-const float Anchor3_y=2641; // cm 
+
+const float Anchor1_x=1296.924;// cm 
+const float Anchor1_y=4.572; // cm 
+const float Anchor2_x=4.572; // cm 
+const float Anchor2_y=1141.781; // cm 
+const float Anchor3_x=2087.88; // cm 
+const float Anchor3_y=1264.92; // cm 
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=0; // cm 
 // const float Anchor2_x=478; // cm 
@@ -72,7 +73,7 @@ float rightMotor;
 // Roboclaw serial and constants 
 // RoboClaw roboclaw(&Serial1,10000);
 // #define address 0x80 
-static constexpr int Encoder_CPR = 300; 
+// static constexpr int Encoder_CPR = 300; 
 // uint32_t accel = 10000; // acceleration in counts/s^2
 
 // ----------- Functions----------//
@@ -90,135 +91,135 @@ struct GoalResult {
   float gy;      // goal y in cm
   bool  found;   // true if circle intersected the path
 };
-// //  establish path length and waypoints
-// static constexpr int PATH_LENGTH = 4;
-// static Waypoint path[PATH_LENGTH] = {
-//   {300, 1262},
-//   {300, 1862},
-//   {600, 2162},
-//   {900, 1862},
-// };
-// // functions to get waypoint x and y coordinates and path length
-// float getWaypointX(int j){
-//   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
-// }
-// float getWaypointY(int j){
-//   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_y : 0.0f;
-// }
+//  establish path length and waypoints
+static constexpr int PATH_LENGTH = 4;
+static Waypoint path[PATH_LENGTH] = {
+  {457.2, 859.536},
+  {762, 1176.555},
+  {1066.8, 859.536},
+  {1066.8, 542.544},
+};
+// functions to get waypoint x and y coordinates and path length
+float getWaypointX(int j){
+  return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
+}
+float getWaypointY(int j){
+  return (j>=0 && j<PATH_LENGTH) ? path[j].wp_y : 0.0f;
+}
 
-// int getPathLength(){
-//   return PATH_LENGTH;
-// }
-// // establish path state 
-// static int pathSegIdx = 0; // current path segment index
+int getPathLength(){
+  return PATH_LENGTH;
+}
+// establish path state 
+static int pathSegIdx = 0; // current path segment index
 
-// void advancePathSegment(){
-//   if(pathSegIdx < PATH_LENGTH - 1){
-//     pathSegIdx++;
-//   }
+void advancePathSegment(){
+  if(pathSegIdx < PATH_LENGTH - 1){
+    pathSegIdx++;
+  }
 
-// }
-// int getCurrentPathSegmentIndex(){
-//   return pathSegIdx;
-// }
-// bool PathComplete(){
-//   return
-//    pathSegIdx == PATH_LENGTH - 1;
-// }
+}
+int getCurrentPathSegmentIndex(){
+  return pathSegIdx;
+}
+bool PathComplete(){
+  return
+   pathSegIdx == PATH_LENGTH - 1;
+}
 
-// // advance when the tag is within the waypoint radius of the next waypoint
-// void AdvancePathSegment(){
-//   if(!PathComplete()){
+// advance when the tag is within the waypoint radius of the next waypoint
+void AdvancePathSegment(){
+  if(!PathComplete()){
 
-//     int nextWaypoint=pathSegIdx+1;
-//     float deltaX=getWaypointX(nextWaypoint)-currentX_global;
-//     float deltaY=getWaypointY(nextWaypoint)-currentY_global;
-//     float distanceToNextWaypoint_sq=deltaX*deltaX+deltaY*deltaY;
+    int nextWaypoint=pathSegIdx+1;
+    float deltaX=getWaypointX(nextWaypoint)-currentX_global;
+    float deltaY=getWaypointY(nextWaypoint)-currentY_global;
+    float distanceToNextWaypoint_sq=deltaX*deltaX+deltaY*deltaY;
 
-//     if (distanceToNextWaypoint_sq <= waypoint_radius * waypoint_radius){
-//       advancePathSegment();
-//     }
-//     // could add in something to handle overshoot of waypoint radius
-//   }
-// }
-// //----------end waypoint handling functions----------//
+    if (distanceToNextWaypoint_sq <= waypoint_radius * waypoint_radius){
+      advancePathSegment();
+    }
+    // could add in something to handle overshoot of waypoint radius
+  }
+}
+//----------end waypoint handling functions----------//
 
-// //---------- start pure pursuit functions----------//
+//---------- start pure pursuit functions----------//
 
 
-// // Find intersection of lookahead circle with the path ahead.
-// // Uses: currentX_global, currentY_global, look_ahead, path[], pathSegIdx, PATH_LENGTH
-// GoalResult findLookaheadGoal() {
-//   GoalResult result;
-//   result.found = false;
+// Find intersection of lookahead circle with the path ahead.
+// Uses: currentX_global, currentY_global, look_ahead, path[], pathSegIdx, PATH_LENGTH
+GoalResult findLookaheadGoal() {
+  GoalResult result;
+  result.found = false;
 
-//   float Lsq = look_ahead * look_ahead;
+  float Lsq = look_ahead * look_ahead;
 
-// bool miss_wp;
-// miss_wp = true;
+bool miss_wp;
+miss_wp = true;
 
-// while (miss_wp)  {
-//   // Search each segment from pathSegIdx forward
-//   for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
+while (miss_wp)  {
+  // Search each segment from pathSegIdx forward
+  for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
 
-//     // Segment endpoints A -> B from existing path[] array
-//     float dsx = path[seg + 1].wp_x - path[seg].wp_x;   // segment direction x
-//     float dsy = path[seg + 1].wp_y - path[seg].wp_y;   // segment direction y
+    // Segment endpoints A -> B from existing path[] array
+    float dsx = path[seg + 1].wp_x - path[seg].wp_x;   // segment direction x
+    float dsy = path[seg + 1].wp_y - path[seg].wp_y;   // segment direction y
 
-//     float fx = path[seg].wp_x - (float)currentX_global;  // segment start relative to robot x
-//     float fy = path[seg].wp_y - (float)currentY_global;  // segment start relative to robot y
+    float fx = path[seg].wp_x - (float)currentX_global;  // segment start relative to robot x
+    float fy = path[seg].wp_y - (float)currentY_global;  // segment start relative to robot y
 
-//     // Quadratic coefficients for circle-segment intersection
-//     float qa = dsx * dsx + dsy * dsy;
-//     float qb = 2.0f * (fx * dsx + fy * dsy);
-//     float qc = (fx * fx + fy * fy) - Lsq;
+    // Quadratic coefficients for circle-segment intersection
+    float qa = dsx * dsx + dsy * dsy;
+    float qb = 2.0f * (fx * dsx + fy * dsy);
+    float qc = (fx * fx + fy * fy) - Lsq;
 
-//     float discriminant = qb * qb - 4.0f * qa * qc;
+    float discriminant = qb * qb - 4.0f * qa * qc;
 
-//     if (discriminant < 0.0f){ 
-//       result.gx = path[seg].wp_x;
-//       result.gy = path[seg].wp_y;
-//       result.found = true;
-//       return result;  // first valid hit on the earliest forward segment
-//       miss_wp=false; // circle misses this segment
-//     } else{
-//     float sqrtDisc = sqrtf(discriminant);
+    if (discriminant < 0.0f){ 
+      result.gx = path[seg].wp_x;
+      result.gy = path[seg].wp_y;
+      result.found = true;
+      return result;  // first valid hit on the earliest forward segment
+      miss_wp=false; // circle misses this segment
+    } else{
+    float sqrtDisc = sqrtf(discriminant);
 
-//     // Two candidate parameter values along the segment (0 = start, 1 = end)
-//     float t1 = (-qb - sqrtDisc) / (2.0f * qa);
-//     float t2 = (-qb + sqrtDisc) / (2.0f * qa);
+    // Two candidate parameter values along the segment (0 = start, 1 = end)
+    float t1 = (-qb - sqrtDisc) / (2.0f * qa);
+    float t2 = (-qb + sqrtDisc) / (2.0f * qa);
 
-//     // Pick the largest valid t (furthest forward on segment)
-//     float bestT = -1.0f;
-//     if (t2 >= 0.0f && t2 <= 1.0f) {
-//       bestT = t2;
-//     } else if (t1 >= 0.0f && t1 <= 1.0f) {
-//       bestT = t1;
-//     }
+    // Pick the largest valid t (furthest forward on segment)
+    float bestT = -1.0f;
+    if (t2 >= 0.0f && t2 <= 1.0f) {
+      bestT = t2;
+    } else if (t1 >= 0.0f && t1 <= 1.0f) {
+      bestT = t1;
+    }
 
-//     if (bestT >= 0.0f) {
-//       result.gx = path[seg].wp_x + bestT * dsx;
-//       result.gy = path[seg].wp_y + bestT * dsy;
-//       result.found = true;
-//       return result;  // first valid hit on the earliest forward segment
-//     }
-//   }
-//   }
-//   miss_wp=false;
+    if (bestT >= 0.0f) {
+      result.gx = path[seg].wp_x + bestT * dsx;
+      result.gy = path[seg].wp_y + bestT * dsy;
+      result.found = true;
+      return result;  // first valid hit on the earliest forward segment
+    }
+  }
+  }
+  miss_wp=false;
   
 
-//   // // Fallback: no intersection found, aim at next waypoint directly
-//   // // could increase lookahead distance or 
-//   // if (!result.found) {
-//   //   int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
-//   //   result.gx = path[nextWp].wp_x;
-//   //   result.gy = path[nextWp].wp_y;
-//   //   result.found = true;
+  // Fallback: no intersection found, aim at next waypoint directly
+  // could increase lookahead distance or 
+  if (!result.found) {
+    int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
+    result.gx = path[nextWp].wp_x;
+    result.gy = path[nextWp].wp_y;
+    result.found = true;
   
 
-//   return result;
-// }
-// }
+  return result;
+}
+}
 
 //----------end pure pursuit functions----------//
 
