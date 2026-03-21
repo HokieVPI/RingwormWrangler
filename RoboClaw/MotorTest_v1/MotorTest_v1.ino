@@ -16,7 +16,7 @@ static constexpr float Kd = 0;
 // static const float rightMotor = 3.0f;// rad/s
 static const float runSpeed  = 0.30f; // 30% of max QPPS
 static const float MaxOmega = 10.0f; // max rotational speed in rad/s
-Serial.println("Global Var");
+
 //---------- start Roboclaw functions----------//
 // int32_t radPerSecToQPPS(float radPerSec){
 //     // counts/sec = (rad/sec) * (counts/rev) / (2*pi rad/rev)

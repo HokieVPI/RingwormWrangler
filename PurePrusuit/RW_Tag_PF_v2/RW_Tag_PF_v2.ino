@@ -52,7 +52,7 @@ double global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 1.0f; // cm 
+const float MinMovement = 0.01f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
@@ -360,9 +360,9 @@ float prevY=0.0f;
     currentX_global = currentX;
     currentY_global = currentY; 
   // Serial.print("( ");
-  Serial.println(currentX_global);
+  // Serial.println(currentX_global);
   // Serial.print(" , ");
-  Serial.println(currentY_global);
+  // Serial.println(currentY_global);
   // Serial.print(") ");
 // ------------ End Weighted Average ------------ //
 
@@ -376,6 +376,7 @@ float prevY=0.0f;
   if (dist_sq >= minMovement_sq) {
     Azimuth = atan2f(dy, dx);
     global_azimuth = Azimuth;
+    // Serial.print(Azimuth);
   }else{
     // Serial.print("Azimuth invalid  ");
     inRangingHandler = false;
@@ -455,36 +456,36 @@ void loop() {
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
 
-  // while (inRangingHandler || !newPosition) {
-  //   delay(10);
-  // }
-  // newPosition = false;  // consumed; wait for next update before next iteration
-  // AdvancePathSegment(); // check if we reached the next waypoint
-  // if (PathComplete()) {
-  //   // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // RoboClaw: enable when driving
-  //   Serial.println("Path Complete");
-  //   inRangingHandler = false;
-  //   return;
-  // }
+  while (inRangingHandler || !newPosition) {
+    delay(10);
+  }
+  newPosition = false;  // consumed; wait for next update before next iteration
+  AdvancePathSegment(); // check if we reached the next waypoint
+  if (PathComplete()) {
+    // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // RoboClaw: enable when driving
+    // Serial.println("Path Complete");
+    inRangingHandler = false;
+    return;
+  }
 
-  // GoalResult goal = findLookaheadGoal();
+  GoalResult goal = findLookaheadGoal();
 
-  // delta_x = goal.gx - currentX_global;
-  // delta_y = goal.gy - currentY_global;
+  delta_x = goal.gx - currentX_global;
+  delta_y = goal.gy - currentY_global;
 
-  // float angleToGoal = atan2f(delta_y, delta_x);
+  float angleToGoal = atan2f(delta_y, delta_x);
   // Serial.print("Goal xy: ");
-  // Serial.print(goal.gx);
+  Serial.print(goal.gx);
   // Serial.print(", ");
-  // Serial.println(goal.gy);
-  // float DesiredHeading = radiansToDegrees(angleToGoal);
+  Serial.println(goal.gy);
+  float DesiredHeading = radiansToDegrees(angleToGoal);
   // Serial.print("Desired Heading: ");
-  // Serial.println(DesiredHeading);
-  // float GlobalHeading = radiansToDegrees(global_azimuth);
+  Serial.println(DesiredHeading);
+  float GlobalHeading = radiansToDegrees(global_azimuth);
   // Serial.print("Global Heading: ");
   // Serial.println(GlobalHeading);
-  // Serial.println(currentX_global);
-  // Serial.println(currentY_global);
+  Serial.println(currentX_global);
+  Serial.println(currentY_global);
 
   // L_d2 = delta_x * delta_x + delta_y * delta_y;
   // L_d = sqrtf(L_d2);
