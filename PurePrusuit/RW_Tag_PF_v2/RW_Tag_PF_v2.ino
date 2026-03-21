@@ -1,6 +1,11 @@
 #include <PortentaUWBShield.h>
 #include <math.h>
-#include <RoboClaw.h>
+// RoboClaw not used until motors are connected (Portenta C33 / library compatibility)
+// #include <RoboClaw.h>
+
+#ifndef PI
+#define PI 3.14159265358979323846f
+#endif
 
 
 /**
@@ -215,7 +220,7 @@ while (miss_wp)  {
     result.gx = path[nextWp].wp_x;
     result.gy = path[nextWp].wp_y;
     result.found = true;
-  
+  }
 
   return result;
 }
@@ -224,10 +229,11 @@ while (miss_wp)  {
 //----------end pure pursuit functions----------//
 
 //---------- start Roboclaw functions----------//
-int32_t radPerSecToQPPS(float radPerSec){
-  // counts/sec = (rad/sec) * (counts/rev) / (2*pi rad/rev)
-  return (int32_t)(radPerSec * Encoder_CPR / (2.0f * PI));
-}
+// Motors / RoboClaw disabled — uncomment when driving:
+// static constexpr int Encoder_CPR = 300;
+// int32_t radPerSecToQPPS(float radPerSec) {
+//   return (int32_t)(radPerSec * Encoder_CPR / (2.0f * PI));
+// }
 //----------end Roboclaw functions----------//
 // Helper to wrap angle to [-PI, PI]
 static float wrapAnglePi(float a) {
@@ -449,72 +455,58 @@ void loop() {
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
 
-//   while(inRangingHandler || !newPosition) {
+  // while (inRangingHandler || !newPosition) {
+  //   delay(10);
+  // }
+  // newPosition = false;  // consumed; wait for next update before next iteration
+  // AdvancePathSegment(); // check if we reached the next waypoint
+  // if (PathComplete()) {
+  //   // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // RoboClaw: enable when driving
+  //   Serial.println("Path Complete");
+  //   inRangingHandler = false;
+  //   return;
+  // }
 
-//     delay(10);
-//   }
-//   newPosition = false;  // consumed; wait for next update before next iteration
-//   AdvancePathSegment(); //check if we reached the next waypoint
-// if (PathComplete()){
-//   // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // decelerate both motors to zero
-//   Serial.println("Path Complete");
-//     inRangingHandler = false;
-//   return;
-// }
+  // GoalResult goal = findLookaheadGoal();
 
-// GoalResult goal =findLookaheadGoal(); // compute goal point 
+  // delta_x = goal.gx - currentX_global;
+  // delta_y = goal.gy - currentY_global;
 
+  // float angleToGoal = atan2f(delta_y, delta_x);
+  // Serial.print("Goal xy: ");
+  // Serial.print(goal.gx);
+  // Serial.print(", ");
+  // Serial.println(goal.gy);
+  // float DesiredHeading = radiansToDegrees(angleToGoal);
+  // Serial.print("Desired Heading: ");
+  // Serial.println(DesiredHeading);
+  // float GlobalHeading = radiansToDegrees(global_azimuth);
+  // Serial.print("Global Heading: ");
+  // Serial.println(GlobalHeading);
+  // Serial.println(currentX_global);
+  // Serial.println(currentY_global);
 
-//     delta_x=goal.gx-currentX_global; // differnce from goal point to current position 
-//     delta_y=goal.gy-currentY_global; // differnce from goal point to current position
+  // L_d2 = delta_x * delta_x + delta_y * delta_y;
+  // L_d = sqrtf(L_d2);
 
-// // Find Look-ahead Distance and heading to goal
-// float angleToGoal = atan2f(delta_y, delta_x); // radians
-// // For debug, convert desired heading to degrees
-// Serial.print("Goal xy");
-// Serial.println(goal.gx);
-// Serial.println(goal.gy);
-// float DesiredHeading = radiansToDegrees(angleToGoal);
-// Serial.print("Desired Heading: ");
-// Serial.println(DesiredHeading);
-// float GlobalHeading = radiansToDegrees(global_azimuth);
-// Serial.print("Global Heading: ");
-// Serial.println(GlobalHeading);
-//   Serial.println(currentX_global);
-//   Serial.println(currentY_global);
+  // float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
-// // Look-ahead distance from current point 
-// L_d2=delta_x*delta_x+delta_y*delta_y;  // Look-ahead Distance Squared 
-// L_d=sqrt(L_d2); // Look-ahead distance
+  // if (L_d < 1.0f) {
+  //   K = 0.0f;
+  // } else {
+  //   K = 2.0f * sinf(alpha) / L_d;
+  //   Serial.print("Curvature Coeff: ");
+  //   Serial.println(K);
+  //   omega = K * velocity;
+  //   leftMotor = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
+  //   rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
 
-// // Compute the angle difference (alpha) in radians
-// float alpha = wrapAnglePi(angleToGoal - global_azimuth);
-
-// // Compute the Curvature Coeff (K)
-// if (L_d < 1.0f) {
-//   K=0.0f;
-// }else{
-// K=2.0f*sinf(alpha)/L_d; 
-
-// Serial.print("Curvature Coeff: ");
-// Serial.println(K);
-// omega=K*velocity; 
-
-// //Find Motor Velocities 
-// leftMotor=(velocity-omega*trackWidth/2.0f)/wheelRadius; 
-// rightMotor=(velocity+omega*trackWidth/2.0f)/wheelRadius; 
-
-// // convert rad/s to counts/s
-// int32_t leftQPPS = radPerSecToQPPS(leftMotor);
-// int32_t rightQPPS = radPerSecToQPPS(rightMotor);
-// // Debug output
-//     Serial.print("Left QPPS: ");
-//     Serial.println(leftQPPS);
-//     Serial.print("Right QPPS: ");
-//     Serial.println(rightQPPS);
-
-// //send to roboclaw with acceleration ramp 
-// roboclaw.SpeedAccelM1M2(address,accel,leftQPPS,rightQPPS);
-
-// }
-}
+    // RoboClaw motor output — uncomment with radPerSecToQPPS + roboclaw.begin in setup:
+    // int32_t leftQPPS = radPerSecToQPPS(leftMotor);
+    // int32_t rightQPPS = radPerSecToQPPS(rightMotor);
+    // Serial.print("Left QPPS: ");
+    // Serial.println(leftQPPS);
+    // Serial.print("Right QPPS: ");
+    // Serial.println(rightQPPS);
+    // roboclaw.SpeedAccelM1M2(address, accel, leftQPPS, rightQPPS);
+  }
