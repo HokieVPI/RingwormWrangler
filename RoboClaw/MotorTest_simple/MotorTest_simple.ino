@@ -1,5 +1,4 @@
 // Include the RoboClaw library
-#include <RoboClaw.h>
 #include <Basicmicro.h>
 #include <SoftwareSerial.h>
 // Create the RoboClaw object, passing the pointer to the hardware serial object
