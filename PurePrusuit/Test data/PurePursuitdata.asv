@@ -573,7 +573,7 @@ robotx = [];
 roboty = [];
 heading = [];
 i = 1;
-while i <= height(data4_2)-5
+while i <= height(data4_2)-605
     goalx = [goalx; data4_2(i,1)];
     goaly = [goaly; data4_2(i+1,1)];
     robotx = [robotx; data4_2(i+2,1)];
@@ -590,7 +590,10 @@ scatter(goalx,goaly)
 xlim([0, 2133.6])
 ylim([0, 2641])
 
-scatter([457.2, 762, 1066.8, 1066.8], [859.536, 1176.555, 859.536, 542.544],80,'green','filled')
+scatter([457.2, 859.536,
+    762, 1176.555,
+    1066.8, 859.536,
+    1066.8, 542.544])
 scatter(xpoints,ypoints,'magenta',"filled")
 
 plot(mapArea(:,1),mapArea(:,2))
