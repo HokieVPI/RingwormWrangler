@@ -11,19 +11,20 @@ RoboClaw roboclaw(&serial,10000);
 #define address 0x80
 
 //Velocity PID coefficients
-#define Kp 1.0
-#define Ki 0.5
-#define Kd 0.25
-#define qpps 44000
+#define Kp 1.54
+#define Ki 0.24
+#define Kd 0.00
+#define qppsM1 42570
+#define qppsM2 44220
 
 void setup() {
   //Open Serial and roboclaw serial ports
-  Serial.begin(57600);
+  Serial.begin(115200);
   roboclaw.begin(38400);
   
   //Set PID Coefficients
-  roboclaw.SetM1VelocityPID(address,Kd,Kp,Ki,qpps);
-  roboclaw.SetM2VelocityPID(address,Kd,Kp,Ki,qpps);  
+  roboclaw.SetM1VelocityPID(address,Kd,Kp,Ki,qppsM1);
+  roboclaw.SetM2VelocityPID(address,Kd,Kp,Ki,qppsM2);  
 }
 
 void displayspeed(void)
@@ -77,15 +78,15 @@ void displayspeed(void)
 void loop() {
   roboclaw.SpeedAccelM1(address,12000,12000);
   roboclaw.SpeedAccelM2(address,12000,-12000);
-  for(uint8_t i = 0;i<100;i++){
+  for(uint8_t i = 0;i<1000;i++){
     displayspeed();
-    delay(10);
+    delay(100);
   }
 
-  roboclaw.SpeedAccelM1(address,12000,-12000);
-  roboclaw.SpeedAccelM2(address,12000,12000);
-  for(uint8_t i = 0;i<100;i++){
-    displayspeed();
-    delay(10);
-  }
+  // roboclaw.SpeedAccelM1(address,12000,-12000);
+  // roboclaw.SpeedAccelM2(address,12000,12000);
+  // for(uint8_t i = 0;i<100;i++){
+  //   displayspeed();
+  //   delay(10);
+  // }
 }

@@ -5,7 +5,7 @@
 SoftwareSerial serial(10, 11); // RX=10, TX=11
 RoboClaw roboclaw(&serial, 10000);
 #define address 0x80 
-uint32_t accel = 25000; // acceleration in counts/s^2
+uint32_t accel = 10000; // acceleration in counts/s^2
 // static constexpr int Encoder_CPR = 300; // count per rev of encoder
 static constexpr int left_QPPS = 42570;
 static constexpr int right_QPPS = 44220;  
@@ -62,7 +62,7 @@ static const float MaxOmega = 10.0f; // max rotational speed in rad/s
 // Setup
 void setup() {
 Serial.begin(115200);
-roboclaw.begin(2400);
+roboclaw.begin(38400);
 
 // uint32_t qpps;
 // qpps = radPerSecToQPPS(MaxOmega);
@@ -135,12 +135,12 @@ void loop() {
     //   lastPrint = millis();
     //   printRoboClawStatus();
     // }
-    Serial.println("postdrive");
+    // Serial.println("postdrive");
     delay(4000);
-    roboclaw.SpeedAccelM1(address,accel, 0);
-    roboclaw.SpeedAccelM2(address,accel, 0);
-      Serial.println("stop");
-    delay(1000);
+    // roboclaw.SpeedAccelM1(address,accel, 0);
+    // roboclaw.SpeedAccelM2(address,accel, 0);
+    //   Serial.println("stop");
+    // delay(1000);
   }
 
 
