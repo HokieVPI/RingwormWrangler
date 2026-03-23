@@ -5,7 +5,7 @@
 SoftwareSerial serial(10, 11); // RX=10, TX=11
 RoboClaw roboclaw(&serial, 10000);
 #define address 0x80 
-uint32_t accel = 25000; // acceleration in counts/s^2
+uint32_t accel = 10000; // acceleration in counts/s^2
 // static constexpr int Encoder_CPR = 300; // count per rev of encoder
 static constexpr int left_QPPS = 42570;
 static constexpr int right_QPPS = 44220;  
@@ -15,6 +15,7 @@ static constexpr float Kd = 0;
 // static const float leftMotor = 3.0f;// rad/s
 // static const float rightMotor = 3.0f;// rad/s
 static const float runSpeed  = 0.30f; // 30% of max QPPS
+static const float stopSpeed = 0.00f; // min QPPS
 static const float MaxOmega = 10.0f; // max rotational speed in rad/s
 
 //---------- start Roboclaw functions----------//
@@ -62,13 +63,13 @@ static const float MaxOmega = 10.0f; // max rotational speed in rad/s
 // Setup
 void setup() {
 Serial.begin(115200);
-roboclaw.begin(2400);
+roboclaw.begin(38400);
 
 // uint32_t qpps;
 // qpps = radPerSecToQPPS(MaxOmega);
 
-roboclaw.SetM1VelocityPID(address,Ki,Kp,Kd,left_QPPS);
-roboclaw.SetM2VelocityPID(address,Ki,Kp,Kd,right_QPPS);
+roboclaw.SetM1VelocityPID(address,Kd,Kp,Ki,right_QPPS);
+// roboclaw.SetM2VelocityPID(address,Kd,Kp,Ki,right_QPPS);
 
 Serial.println("Setup good");
 }
@@ -123,22 +124,23 @@ Serial.println("Setup good");
 
 void loop() {
     static uint32_t lastPrint = 0;
-    int32_t leftBase = (int32_t)(left_QPPS  * runSpeed);
+    // int32_t leftBase = (int32_t)(left_QPPS  * runSpeed);
     int32_t rightBase = (int32_t)(right_QPPS * runSpeed);
     // int32_t leftQPPS  = radPerSecToQPPS(leftMotor);
     // int32_t rightQPPS = radPerSecToQPPS(rightMotor);
   Serial.println("predrive");
-    roboclaw.SpeedAccelM1(address, accel, leftBase);
-    roboclaw.SpeedAccelM2(address, accel, rightBase);
+    roboclaw.SpeedAccelM1(address, accel, );
+    // roboclaw.SpeedAccelM2(address, accel, rightBase);
   
     // if (millis() - lastPrint >= 500) {
     //   lastPrint = millis();
     //   printRoboClawStatus();
     // }
-    Serial.println("postdrive");
-    delay(4000);
+
+    delay(1000);
+        Serial.println("postdrive");
     roboclaw.SpeedAccelM1(address,accel, 0);
-    roboclaw.SpeedAccelM2(address,accel, 0);
+    // roboclaw.SpeedAccelM2(address,accel, 0);
       Serial.println("stop");
     delay(1000);
   }
