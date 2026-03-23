@@ -15,6 +15,7 @@ static constexpr float Kd = 0;
 // static const float leftMotor = 3.0f;// rad/s
 // static const float rightMotor = 3.0f;// rad/s
 static const float runSpeed  = 0.30f; // 30% of max QPPS
+static const float stopSpeed = 0.00f; // min QPPS
 static const float MaxOmega = 10.0f; // max rotational speed in rad/s
 
 //---------- start Roboclaw functions----------//
@@ -67,8 +68,8 @@ roboclaw.begin(38400);
 // uint32_t qpps;
 // qpps = radPerSecToQPPS(MaxOmega);
 
-roboclaw.SetM1VelocityPID(address,Ki,Kp,Kd,left_QPPS);
-roboclaw.SetM2VelocityPID(address,Ki,Kp,Kd,right_QPPS);
+roboclaw.SetM1VelocityPID(address,Kd,Kp,Ki,right_QPPS);
+// roboclaw.SetM2VelocityPID(address,Kd,Kp,Ki,right_QPPS);
 
 Serial.println("Setup good");
 }
@@ -123,24 +124,25 @@ Serial.println("Setup good");
 
 void loop() {
     static uint32_t lastPrint = 0;
-    int32_t leftBase = (int32_t)(left_QPPS  * runSpeed);
+    // int32_t leftBase = (int32_t)(left_QPPS  * runSpeed);
     int32_t rightBase = (int32_t)(right_QPPS * runSpeed);
     // int32_t leftQPPS  = radPerSecToQPPS(leftMotor);
     // int32_t rightQPPS = radPerSecToQPPS(rightMotor);
   Serial.println("predrive");
-    roboclaw.SpeedAccelM1(address, accel, leftBase);
-    roboclaw.SpeedAccelM2(address, accel, rightBase);
+    roboclaw.SpeedAccelM1(address, accel, );
+    // roboclaw.SpeedAccelM2(address, accel, rightBase);
   
     // if (millis() - lastPrint >= 500) {
     //   lastPrint = millis();
     //   printRoboClawStatus();
     // }
-    // Serial.println("postdrive");
-    delay(4000);
-    // roboclaw.SpeedAccelM1(address,accel, 0);
+
+    delay(1000);
+        Serial.println("postdrive");
+    roboclaw.SpeedAccelM1(address,accel, 0);
     // roboclaw.SpeedAccelM2(address,accel, 0);
-    //   Serial.println("stop");
-    // delay(1000);
+      Serial.println("stop");
+    delay(1000);
   }
 
 
