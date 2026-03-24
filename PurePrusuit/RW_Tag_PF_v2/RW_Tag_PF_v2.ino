@@ -52,7 +52,7 @@ double global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 3;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 0.01f; // cm 
+const float MinMovement = 2.0f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
@@ -300,6 +300,7 @@ if (!anchor1_received || !anchor2_received || !anchor3_received) {
     inRangingHandler = false;
     return;
   }
+
   float x = (C*E - F*B) / det;
   float y = (A*F - C*D) / det;
 
@@ -371,21 +372,22 @@ float prevY=0.0f;
   float dx = currentX - prevX;
   float dy = currentY - prevY;
 // Compare the dx^2+dy^2 to the distance to flag invalid headings
-  // float dist_sq = dx*dx + dy*dy;
+  float dist_sq = dx*dx + dy*dy;
 
+    // Azimuth = atan2f(dy, dx);
+    // global_azimuth = Azimuth;
+    // Azimuth = radiansToDegrees(Azimuth);
+    // Serial.println(Azimuth);
+
+// If the distance is greater than the minimum movement, calculate the azimuth
+  if (dist_sq >= minMovement_sq) {
     Azimuth = atan2f(dy, dx);
     global_azimuth = Azimuth;
-    Serial.println(Azimuth);
-// If the distance is greater than the minimum movement, calculate the azimuth
-  // if (dist_sq >= minMovement_sq) {
-  //   Azimuth = atan2f(dy, dx);
-  //   global_azimuth = Azimuth;
-  //   // Serial.print(Azimuth);
-  // }else{
-  //   // Serial.print("Azimuth invalid  ");
-  //   inRangingHandler = false;
-  //   return;
-  // }
+  }else{
+    // Serial.print("Azimuth invalid  ");
+    inRangingHandler = false;
+    return;
+  }
 
   newPosition = true;
 // ------------ End Heading Calculation ------------ //
@@ -460,10 +462,10 @@ void loop() {
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
 
-  // while (inRangingHandler || !newPosition) {
-  //   delay(10);
-  // }
-  // newPosition = false;  // consumed; wait for next update before next iteration
+  while (inRangingHandler || !newPosition) {
+    delay(10);
+  }
+  newPosition = false;  // consumed; wait for next update before next iteration
   // AdvancePathSegment(); // check if we reached the next waypoint
   // if (PathComplete()) {
   //   // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // RoboClaw: enable when driving
@@ -485,11 +487,11 @@ void loop() {
   // float DesiredHeading = radiansToDegrees(angleToGoal);
   // // Serial.print("Desired Heading: ");
   // Serial.println(DesiredHeading);
-  // float GlobalHeading = radiansToDegrees(global_azimuth);
-  // // Serial.print("Global Heading: ");
-  // // Serial.println(GlobalHeading);
-  // Serial.println(currentX_global);
-  // Serial.println(currentY_global);
+  global_azimuth = radiansToDegrees(global_azimuth);
+  // Serial.print("Global Heading: ");
+  Serial.println(global_azimuth);
+  Serial.println(currentX_global);
+  Serial.println(currentY_global);
 
   // L_d2 = delta_x * delta_x + delta_y * delta_y;
   // L_d = sqrtf(L_d2);
