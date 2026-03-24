@@ -50,7 +50,7 @@ double Azimuth = 0.0f; // rad
 double global_azimuth = 0.0f; // rad
 
 // constants 
-static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 3;
+static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
 const float MinMovement = 2.0f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
@@ -337,7 +337,11 @@ float prevY=0.0f;
   for (int i = 0; i < HALF_CIRCULAR_BUFFER_SIZE; i++) {
     weights[i] = 1.0f/HALF_CIRCULAR_BUFFER_SIZE;
   }
-  // weights[] = {0.3,0.25,0.2,0.15,0.1};
+   weights[0] = 0.3;
+   weights[1] = 0.25;
+   weights[2] = 0.2;
+   weights[3] = 0.15;
+   weights[4] = 0.1;
   int index = head_index;
 
   for (int i = 0; i < HALF_CIRCULAR_BUFFER_SIZE; i++) {
