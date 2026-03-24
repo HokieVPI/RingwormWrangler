@@ -19,18 +19,18 @@
 
 // Anchor Locations in Centimeters (x,y) z=0 
 
-const float Anchor1_x=1296.924;// cm 
-const float Anchor1_y=4.572; // cm 
-const float Anchor2_x=4.572; // cm 
-const float Anchor2_y=1141.781; // cm 
-const float Anchor3_x=2087.88; // cm 
-const float Anchor3_y=1264.92; // cm 
-// const float Anchor1_x=0;// cm 
-// const float Anchor1_y=0; // cm 
-// const float Anchor2_x=478; // cm 
-// const float Anchor2_y=0; // cm 
-// const float Anchor3_x=0; // cm 
-// const float Anchor3_y=519; // cm 
+// const float Anchor1_x=1296.924;// cm 
+// const float Anchor1_y=4.572; // cm 
+// const float Anchor2_x=4.572; // cm 
+// const float Anchor2_y=1141.781; // cm 
+// const float Anchor3_x=2087.88; // cm 
+// const float Anchor3_y=1264.92; // cm 
+const float Anchor1_x=0;// cm 
+const float Anchor1_y=0; // cm 
+const float Anchor2_x=0; // cm 
+const float Anchor2_y=244; // cm 
+const float Anchor3_x=396; // cm 
+const float Anchor3_y=0; // cm 
 
 // Initialize Distance Variables
 int dist_1 = 0;
@@ -50,7 +50,7 @@ double Azimuth = 0.0f; // rad
 double global_azimuth = 0.0f; // rad
 
 // constants 
-static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5;
+static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 3;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
 const float MinMovement = 0.01f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
@@ -371,17 +371,21 @@ float prevY=0.0f;
   float dx = currentX - prevX;
   float dy = currentY - prevY;
 // Compare the dx^2+dy^2 to the distance to flag invalid headings
-  float dist_sq = dx*dx + dy*dy;
-// If the distance is greater than the minimum movement, calculate the azimuth
-  if (dist_sq >= minMovement_sq) {
+  // float dist_sq = dx*dx + dy*dy;
+
     Azimuth = atan2f(dy, dx);
     global_azimuth = Azimuth;
-    // Serial.print(Azimuth);
-  }else{
-    // Serial.print("Azimuth invalid  ");
-    inRangingHandler = false;
-    return;
-  }
+    Serial.println(Azimuth);
+// If the distance is greater than the minimum movement, calculate the azimuth
+  // if (dist_sq >= minMovement_sq) {
+  //   Azimuth = atan2f(dy, dx);
+  //   global_azimuth = Azimuth;
+  //   // Serial.print(Azimuth);
+  // }else{
+  //   // Serial.print("Azimuth invalid  ");
+  //   inRangingHandler = false;
+  //   return;
+  // }
 
   newPosition = true;
 // ------------ End Heading Calculation ------------ //
@@ -456,36 +460,36 @@ void loop() {
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
 
-  while (inRangingHandler || !newPosition) {
-    delay(10);
-  }
-  newPosition = false;  // consumed; wait for next update before next iteration
-  AdvancePathSegment(); // check if we reached the next waypoint
-  if (PathComplete()) {
-    // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // RoboClaw: enable when driving
-    // Serial.println("Path Complete");
-    inRangingHandler = false;
-    return;
-  }
+  // while (inRangingHandler || !newPosition) {
+  //   delay(10);
+  // }
+  // newPosition = false;  // consumed; wait for next update before next iteration
+  // AdvancePathSegment(); // check if we reached the next waypoint
+  // if (PathComplete()) {
+  //   // roboclaw.SpeedAccelM1M2(address, accel, 0, 0);  // RoboClaw: enable when driving
+  //   // Serial.println("Path Complete");
+  //   inRangingHandler = false;
+  //   return;
+  // }
 
-  GoalResult goal = findLookaheadGoal();
+  // GoalResult goal = findLookaheadGoal();
 
-  delta_x = goal.gx - currentX_global;
-  delta_y = goal.gy - currentY_global;
+  // delta_x = goal.gx - currentX_global;
+  // delta_y = goal.gy - currentY_global;
 
-  float angleToGoal = atan2f(delta_y, delta_x);
-  // Serial.print("Goal xy: ");
-  Serial.print(goal.gx);
-  // Serial.print(", ");
-  Serial.println(goal.gy);
-  float DesiredHeading = radiansToDegrees(angleToGoal);
-  // Serial.print("Desired Heading: ");
-  Serial.println(DesiredHeading);
-  float GlobalHeading = radiansToDegrees(global_azimuth);
-  // Serial.print("Global Heading: ");
-  // Serial.println(GlobalHeading);
-  Serial.println(currentX_global);
-  Serial.println(currentY_global);
+  // float angleToGoal = atan2f(delta_y, delta_x);
+  // // Serial.print("Goal xy: ");
+  // Serial.print(goal.gx);
+  // // Serial.print(", ");
+  // Serial.println(goal.gy);
+  // float DesiredHeading = radiansToDegrees(angleToGoal);
+  // // Serial.print("Desired Heading: ");
+  // Serial.println(DesiredHeading);
+  // float GlobalHeading = radiansToDegrees(global_azimuth);
+  // // Serial.print("Global Heading: ");
+  // // Serial.println(GlobalHeading);
+  // Serial.println(currentX_global);
+  // Serial.println(currentY_global);
 
   // L_d2 = delta_x * delta_x + delta_y * delta_y;
   // L_d = sqrtf(L_d2);
