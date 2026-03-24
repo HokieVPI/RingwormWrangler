@@ -92,9 +92,9 @@ struct GoalResult {
 //  establish path length and waypoints
 static constexpr int PATH_LENGTH = 3;
 static Waypoint path[PATH_LENGTH] = {
-  {75, 75},
-  {87.5,100},
-  {100, 125},
+  {75, 60},
+  {145,75},
+  {250, 90},
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
@@ -466,29 +466,29 @@ void loop() {
 
   float angleToGoal = atan2f(delta_y, delta_x);
   // Serial.print("Goal xy: ");
-  // Serial.println(goal.gx);
-  // Serial.println(goal.gy);
+  Serial.println(goal.gx);
+  Serial.println(goal.gy);
   float DesiredHeading = radiansToDegrees(angleToGoal);
   // Serial.print("Desired Heading: ");
-  // Serial.println(DesiredHeading);
+  Serial.println(DesiredHeading);
   global_azimuth = radiansToDegrees(global_azimuth);
-  // Serial.println(global_azimuth);
-  // Serial.println(currentX_global);
-  // Serial.println(currentY_global);
+  Serial.println(global_azimuth);
+  Serial.println(currentX_global);
+  Serial.println(currentY_global);
 
-  L_d2 = delta_x * delta_x + delta_y * delta_y;
-  L_d = sqrtf(L_d2);
+  // L_d2 = delta_x * delta_x + delta_y * delta_y;
+  // L_d = sqrtf(L_d2);
 
-  float alpha = wrapAnglePi(angleToGoal - global_azimuth);
+  // float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
-  if (L_d < 1.0f) {
-    K = 0.0f;
-  } else {
-    K = 2.0f * sinf(alpha) / L_d;
-    // Serial.print("Curvature Coeff: ");
-    Serial.println(K);
-    // omega = K * velocity;
-    leftMotor = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
-    rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
-  }
+  // if (L_d < 1.0f) {
+  //   K = 0.0f;
+  // } else {
+  //   K = 2.0f * sinf(alpha) / L_d;
+  //   // Serial.print("Curvature Coeff: ");
+  //   Serial.println(K);
+  //   // omega = K * velocity;
+  //   leftMotor = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
+  //   rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
+  // }
 }
