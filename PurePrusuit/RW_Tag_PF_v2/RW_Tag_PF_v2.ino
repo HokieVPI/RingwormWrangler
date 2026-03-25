@@ -1,5 +1,6 @@
 #include <PortentaUWBShield.h>
 #include <math.h>
+
 // RoboClaw not used until motors are connected (Portenta C33 / library compatibility)
 // #include <RoboClaw.h>
 
@@ -70,7 +71,7 @@ float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
 const float velocity = 25.0f;  // Constant Velocity in cm/s
 static constexpr int wheelRadius = 15;  //cm 
-static constexpr int trackWidth =86;  // Wheel to Wheel in cm 
+static constexpr int trackWidth =43.18;  // Wheel to Wheel in cm 
 float leftMotor; 
 float rightMotor; 
 
