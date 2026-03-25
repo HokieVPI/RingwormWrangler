@@ -60,7 +60,7 @@ volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
 static constexpr int waypoint_radius = 15; // cm
-static constexpr float look_ahead=1000.0f; // cm 
+static constexpr float look_ahead=100.0f; // cm 
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -102,11 +102,11 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 3;
+static constexpr int PATH_LENGTH = 2;
 static Waypoint path[PATH_LENGTH] = {
-  {75, 60},
-  {145,75},
-  {250, 90},
+  {259, 183},
+  {360,311}
+  
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
@@ -509,8 +509,8 @@ void loop() {
     omega = K * velocity;
     leftMotor  = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
     rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
-Serial.println(leftMotor);
-Serial.println(rightMotor);
+// Serial.println(leftMotor);
+// Serial.println(rightMotor);
     int32_t leftCounts  = (int32_t)(leftMotor  * RAD_TO_COUNTS);
     int32_t rightCounts = (int32_t)(rightMotor * RAD_TO_COUNTS);
 

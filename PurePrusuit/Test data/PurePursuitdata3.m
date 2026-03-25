@@ -242,3 +242,140 @@ ylabel("y position (cm)")
 legend("Robot Position", "Waypoints", "Goal Points", "Path Complete")
 axis equal
 hold off
+
+%% test_3_24_2
+waypoints9 = [75 60;
+              145 75;
+              250 90];
+
+fid = fopen("test_3_24_2", "r");
+if fid == -1
+    warning("test_3_24_2 not found, skipping section.");
+else
+lines = {};
+while ~feof(fid)
+    lines{end+1} = fgetl(fid);
+end
+fclose(fid);
+
+goalX = []; goalY = [];
+desiredHeading = []; globalAzimuth = [];
+currentX = []; currentY = [];
+pathCompleteIdx = NaN;
+
+idx = 2;
+while idx + 5 <= length(lines)
+    val1 = str2double(lines{idx});
+    if isnan(val1)
+        pathCompleteIdx = length(currentX);
+        break;
+    end
+    goalX          = [goalX;          val1];
+    goalY          = [goalY;          str2double(lines{idx+1})];
+    desiredHeading = [desiredHeading; str2double(lines{idx+2})];
+    globalAzimuth  = [globalAzimuth;  str2double(lines{idx+3})];
+    currentX       = [currentX;       str2double(lines{idx+4})];
+    currentY       = [currentY;       str2double(lines{idx+5})];
+    idx = idx + 6;
+end
+
+valid = currentY >= 0;
+currentX = currentX(valid); currentY = currentY(valid);
+desiredHeading = desiredHeading(valid); globalAzimuth = globalAzimuth(valid);
+goalX = goalX(valid); goalY = goalY(valid);
+
+if ~isnan(pathCompleteIdx)
+    cumValid = cumsum(valid);
+    pcValid = find(cumValid == pathCompleteIdx, 1, 'first');
+    if isempty(pcValid)
+        pcValid = length(currentX);
+    end
+else
+    pcValid = length(currentX);
+end
+
+figure
+hold on
+scatter(currentX, currentY, 'filled')
+scatter(waypoints9(:,1), waypoints9(:,2), 100, 'm', 'filled')
+scatter(goalX, goalY, 25, 'g', 'filled')
+for k = 1:length(desiredHeading)
+    plot([currentX(k), currentX(k)+4*cos(desiredHeading(k)*(pi/180))], ...
+         [currentY(k), currentY(k)+4*sin(desiredHeading(k)*(pi/180))], 'HandleVisibility', 'off')
+end
+plot(currentX(pcValid), currentY(pcValid), 'r*', 'MarkerSize', 15, 'LineWidth', 2)
+title("Pure Pursuit X-Y Position - Test 3\_24\_2")
+xlabel("x position (cm)")
+ylabel("y position (cm)")
+legend("Robot Position", "Waypoints", "Goal Points", "Path Complete")
+axis equal
+hold off
+end
+
+%% test_3_24_3
+waypoints_3_24_3 = [259 183;
+                    360 311];
+
+fid = fopen("test_3_24_3", "r");
+if fid == -1
+    warning("test_3_24_3 not found, skipping section.");
+else
+lines = {};
+while ~feof(fid)
+    lines{end+1} = fgetl(fid);
+end
+fclose(fid);
+
+goalX = []; goalY = [];
+desiredHeading = []; globalAzimuth = [];
+currentX = []; currentY = [];
+pathCompleteIdx = NaN;
+
+idx = 2;
+while idx + 5 <= length(lines)
+    val1 = str2double(lines{idx});
+    if isnan(val1)
+        pathCompleteIdx = length(currentX);
+        break;
+    end
+    goalX          = [goalX;          val1];
+    goalY          = [goalY;          str2double(lines{idx+1})];
+    desiredHeading = [desiredHeading; str2double(lines{idx+2})];
+    globalAzimuth  = [globalAzimuth;  str2double(lines{idx+3})];
+    currentX       = [currentX;       str2double(lines{idx+4})];
+    currentY       = [currentY;       str2double(lines{idx+5})];
+    idx = idx + 6;
+end
+
+valid = currentY >= 0;
+currentX = currentX(valid); currentY = currentY(valid);
+desiredHeading = desiredHeading(valid); globalAzimuth = globalAzimuth(valid);
+goalX = goalX(valid); goalY = goalY(valid);
+
+if ~isnan(pathCompleteIdx)
+    cumValid = cumsum(valid);
+    pcValid = find(cumValid == pathCompleteIdx, 1, 'first');
+    if isempty(pcValid)
+        pcValid = length(currentX);
+    end
+else
+    pcValid = length(currentX);
+end
+
+figure
+hold on
+scatter(currentX, currentY, 'filled')
+scatter(waypoints_3_24_3(:,1), waypoints_3_24_3(:,2), 100, 'm', 'filled')
+scatter(goalX, goalY, 25, 'g', 'filled')
+for k = 1:length(desiredHeading)
+    plot([currentX(k), currentX(k)+4*cos(desiredHeading(k)*(pi/180))], ...
+         [currentY(k), currentY(k)+4*sin(desiredHeading(k)*(pi/180))], 'HandleVisibility', 'off')
+end
+plot(currentX(pcValid), currentY(pcValid), 'r*', 'MarkerSize', 15, 'LineWidth', 2)
+title("Pure Pursuit X-Y Position - Test 3\_24\_3")
+xlabel("x position (cm)")
+ylabel("y position (cm)")
+legend("Robot Position", "Waypoints", "Goal Points", "Path Complete")
+axis equal
+hold off
+end
