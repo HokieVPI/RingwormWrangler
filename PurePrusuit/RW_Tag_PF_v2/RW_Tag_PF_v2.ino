@@ -59,8 +59,8 @@ int tail_index = CIRCULAR_BUFFER_SIZE-1;
 volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
-static constexpr int waypoint_radius = 30; // cm
-static constexpr float look_ahead=100.0f; // cm 
+static constexpr int waypoint_radius = 20; // cm
+static constexpr float look_ahead=75.0f; // cm 
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -108,8 +108,8 @@ static Waypoint path[PATH_LENGTH] = {
   {244, 366},
   {295, 446},
   {382, 446},
-  {427, 366},
-  {427,122}
+  {457, 366},
+  {457,122}
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
@@ -518,7 +518,7 @@ void loop() {
     int32_t rightCounts = (int32_t)(rightMotor * RAD_TO_COUNTS);
 
     controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                 motor_accel, (uint32_t)rightCounts,
-                                 motor_accel, (uint32_t)leftCounts);
+                                 motor_accel, (uint32_t)leftCounts,
+                                 motor_accel, (uint32_t)rightCounts);
   }
 }
