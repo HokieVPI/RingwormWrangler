@@ -1,8 +1,7 @@
 #include <PortentaUWBShield.h>
 #include <math.h>
 
-// RoboClaw not used until motors are connected (Portenta C33 / library compatibility)
-// #include <RoboClaw.h>
+#include <Basicmicro.h>
 
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -61,7 +60,7 @@ volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
 static constexpr int waypoint_radius = 15; // cm
-static constexpr float look_ahead=50.0f; // cm 
+static constexpr float look_ahead=1000.0f; // cm 
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -74,6 +73,18 @@ static constexpr int wheelRadius = 15;  //cm
 static constexpr int trackWidth =43.18;  // Wheel to Wheel in cm 
 float leftMotor; 
 float rightMotor; 
+
+// RoboClaw UART on Portenta C33: TX = pin 14, RX = pin 13
+UART controllerSerial(14, 13);
+
+#define MOTOR_ADDRESS        128
+#define LIBRARY_READ_TIMEOUT 10000
+
+static constexpr float ENCODER_CPR   = 24293.0f;
+static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
+uint32_t motor_accel = 25000;
+
+Basicmicro controller(&controllerSerial, LIBRARY_READ_TIMEOUT);
 
 // ----------- Functions----------//
 
@@ -439,7 +450,10 @@ void setup() {
   //start the session
   myController.start();
 
-  // roboclaw.begin(38400);
+  controller.begin(38400);
+  delay(100);
+  controller.SetM1VelocityPID(MOTOR_ADDRESS, 1.79279, 0.27940, 0.00000, 70620);
+  controller.SetM2VelocityPID(MOTOR_ADDRESS, 1.74675, 0.26201, 0.00000, 69630);
 
 }
 
@@ -455,6 +469,9 @@ void loop() {
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
   if (PathComplete()) {
+    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                 motor_accel, 0,
+                                 motor_accel, 0);
     Serial.println("Path Complete");
     inRangingHandler = false;
     return;
@@ -472,24 +489,33 @@ void loop() {
   float DesiredHeading = radiansToDegrees(angleToGoal);
   // Serial.print("Desired Heading: ");
   Serial.println(DesiredHeading);
-  global_azimuth = radiansToDegrees(global_azimuth);
-  Serial.println(global_azimuth);
+  float azimuth_deg = radiansToDegrees(global_azimuth);
+  Serial.println(azimuth_deg);
   Serial.println(currentX_global);
   Serial.println(currentY_global);
 
-  // L_d2 = delta_x * delta_x + delta_y * delta_y;
-  // L_d = sqrtf(L_d2);
+  L_d2 = delta_x * delta_x + delta_y * delta_y;
+  L_d = sqrtf(L_d2);
 
-  // float alpha = wrapAnglePi(angleToGoal - global_azimuth);
+  float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
-  // if (L_d < 1.0f) {
-  //   K = 0.0f;
-  // } else {
-  //   K = 2.0f * sinf(alpha) / L_d;
-  //   // Serial.print("Curvature Coeff: ");
-  //   Serial.println(K);
-  //   // omega = K * velocity;
-  //   leftMotor = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
-  //   rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
-  // }
+  if (L_d < 1.0f) {
+    K = 0.0f;
+    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                 motor_accel, 0,
+                                 motor_accel, 0);
+  } else {
+    K = 2.0f * sinf(alpha) / L_d;
+    omega = K * velocity;
+    leftMotor  = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
+    rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
+Serial.println(leftMotor);
+Serial.println(rightMotor);
+    int32_t leftCounts  = (int32_t)(leftMotor  * RAD_TO_COUNTS);
+    int32_t rightCounts = (int32_t)(rightMotor * RAD_TO_COUNTS);
+
+    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                 motor_accel, (uint32_t)rightCounts,
+                                 motor_accel, (uint32_t)leftCounts);
+  }
 }
