@@ -59,7 +59,7 @@ int tail_index = CIRCULAR_BUFFER_SIZE-1;
 volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
-static constexpr int waypoint_radius = 15; // cm
+static constexpr int waypoint_radius = 30; // cm
 static constexpr float look_ahead=100.0f; // cm 
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
