@@ -25,10 +25,10 @@
 // const float Anchor3_y=1264.92; // cm 
 const float Anchor1_x=0;// cm 
 const float Anchor1_y=0; // cm 
-const float Anchor2_x=0; // cm 
-const float Anchor2_y=244; // cm 
-const float Anchor3_x=396; // cm 
-const float Anchor3_y=0; // cm 
+const float Anchor2_x=722.376; // cm 
+const float Anchor2_y=0; // cm 
+const float Anchor3_x=326.136; // cm 
+const float Anchor3_y=746.76; // cm 
 
 // Initialize Distance Variables
 int dist_1 = 0;
@@ -92,9 +92,10 @@ struct GoalResult {
 //  establish path length and waypoints
 static constexpr int PATH_LENGTH = 3;
 static Waypoint path[PATH_LENGTH] = {
-  {75, 60},
-  {145,75},
-  {250, 90},
+  {213.36, 344.424},
+  {368.808, 496.824},
+  {576.072, 344.424},
+  {487.68, 158.496},
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
