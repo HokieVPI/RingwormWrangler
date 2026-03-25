@@ -25,10 +25,10 @@
 // const float Anchor3_y=1264.92; // cm 
 const float Anchor1_x=0;// cm 
 const float Anchor1_y=0; // cm 
-const float Anchor2_x=0; // cm 
-const float Anchor2_y=244; // cm 
-const float Anchor3_x=396; // cm 
-const float Anchor3_y=0; // cm 
+const float Anchor2_x=719; // cm 
+const float Anchor2_y=0; // cm 
+const float Anchor3_x=320; // cm 
+const float Anchor3_y=752; // cm 
 
 // Initialize Distance Variables
 int dist_1 = 0;
@@ -102,11 +102,14 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 2;
+static constexpr int PATH_LENGTH = 6;
 static Waypoint path[PATH_LENGTH] = {
-  {259, 183},
-  {360,311}
-  
+  {244, 122},
+  {244, 366},
+  {295, 446},
+  {382, 446},
+  {427, 366},
+  {427,122}
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
