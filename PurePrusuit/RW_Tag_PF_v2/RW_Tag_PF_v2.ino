@@ -139,19 +139,33 @@ bool PathComplete(){
    pathSegIdx == PATH_LENGTH - 1;
 }
 
-// advance when the tag is within the waypoint radius of the next waypoint
+// advance when the tag is within the waypoint radius or has overshot
 void AdvancePathSegment(){
-  if(!PathComplete()){
+  while(!PathComplete()){
+    int nextWp = pathSegIdx + 1;
+    float deltaX = getWaypointX(nextWp) - currentX_global;
+    float deltaY = getWaypointY(nextWp) - currentY_global;
+    float distSq = deltaX * deltaX + deltaY * deltaY;
 
-    int nextWaypoint=pathSegIdx+1;
-    float deltaX=getWaypointX(nextWaypoint)-currentX_global;
-    float deltaY=getWaypointY(nextWaypoint)-currentY_global;
-    float distanceToNextWaypoint_sq=deltaX*deltaX+deltaY*deltaY;
+    bool inRadius = (distSq <= waypoint_radius * waypoint_radius);
 
-    if (distanceToNextWaypoint_sq <= waypoint_radius * waypoint_radius){
-      advancePathSegment();
+    // projection overshoot check: t > 1.0 means robot passed the segment endpoint
+    bool overshot = false;
+    float segDx = getWaypointX(nextWp) - getWaypointX(pathSegIdx);
+    float segDy = getWaypointY(nextWp) - getWaypointY(pathSegIdx);
+    float segLenSq = segDx * segDx + segDy * segDy;
+    if (segLenSq > 0.0f) {
+      float robDx = currentX_global - getWaypointX(pathSegIdx);
+      float robDy = currentY_global - getWaypointY(pathSegIdx);
+      float t = (robDx * segDx + robDy * segDy) / segLenSq;
+      overshot = (t > 1.0f);
     }
-    // could add in something to handle overshoot of waypoint radius
+
+    if (inRadius || overshot) {
+      advancePathSegment();
+    } else {
+      break;
+    }
   }
 }
 //----------end waypoint handling functions----------//

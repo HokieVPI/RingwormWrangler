@@ -169,14 +169,27 @@ def advance_path_segment(
     path: np.ndarray, path_seg_idx: int,
     waypoint_radius: float
 ) -> int:
-    if path_seg_idx >= len(path) - 1:
-        return path_seg_idx
-    next_wp = path[path_seg_idx + 1]
-    dx = next_wp[0] - cur_x
-    dy = next_wp[1] - cur_y
-    dist_sq = dx * dx + dy * dy
-    if dist_sq <= waypoint_radius ** 2:
-        return path_seg_idx + 1
+    while path_seg_idx < len(path) - 1:
+        next_wp = path[path_seg_idx + 1]
+        dx = next_wp[0] - cur_x
+        dy = next_wp[1] - cur_y
+        dist_sq = dx * dx + dy * dy
+        in_radius = dist_sq <= waypoint_radius ** 2
+
+        seg_dx = next_wp[0] - path[path_seg_idx, 0]
+        seg_dy = next_wp[1] - path[path_seg_idx, 1]
+        seg_len_sq = seg_dx * seg_dx + seg_dy * seg_dy
+        overshot = False
+        if seg_len_sq > 0.0:
+            rob_dx = cur_x - path[path_seg_idx, 0]
+            rob_dy = cur_y - path[path_seg_idx, 1]
+            t = (rob_dx * seg_dx + rob_dy * seg_dy) / seg_len_sq
+            overshot = t > 1.0
+
+        if in_radius or overshot:
+            path_seg_idx += 1
+        else:
+            break
     return path_seg_idx
 
 
