@@ -59,8 +59,8 @@ int tail_index = CIRCULAR_BUFFER_SIZE-1;
 volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
-static constexpr int waypoint_radius = 20; // cm
-static constexpr float look_ahead=75.0f; // cm 
+static constexpr int waypoint_radius = 25; // cm
+static constexpr float look_ahead=125.0f; // cm 
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -68,7 +68,7 @@ float L_d; // Look-Ahead Distance in cm
 float L_d2; // Look-Ahead Distance squared 
 float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
-const float velocity = 25.0f;  // Constant Velocity in cm/s
+const float velocity = 50.0f;  // Constant Velocity in cm/s
 static constexpr int wheelRadius = 15;  //cm 
 static constexpr int trackWidth =43.18;  // Wheel to Wheel in cm 
 float leftMotor; 
@@ -102,12 +102,10 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 6;
+static constexpr int PATH_LENGTH = 4;
 static Waypoint path[PATH_LENGTH] = {
   {244, 122},
   {244, 366},
-  {295, 446},
-  {382, 446},
   {457, 366},
   {457,122}
 };
