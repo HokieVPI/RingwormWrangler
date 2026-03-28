@@ -303,7 +303,8 @@ if (!anchor1_received || !anchor2_received || !anchor3_received) {
 
   float x = (C*E - F*B) / det;
   float y = (A*F - C*D) / det;
-
+Serial.println(x);
+Serial.println(y);
   if(!prev_valid) {
     for(int i = 0; i < CIRCULAR_BUFFER_SIZE; i++) {
       x_circular_buffer[i] = x;
@@ -464,60 +465,60 @@ void loop() {
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
+delay(10);
+//   while (inRangingHandler || !newPosition) {
+//     delay(10);
+//   }
+//   newPosition = false;  // consumed; wait for next update before next iteration
+//   AdvancePathSegment(); // check if we reached the next waypoint
+//   if (PathComplete()) {
+//     controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+//                                  motor_accel, 0,
+//                                  motor_accel, 0);
+//     Serial.println("Path Complete");
+//     inRangingHandler = false;
+//     return;
+//   }
 
-  while (inRangingHandler || !newPosition) {
-    delay(10);
-  }
-  newPosition = false;  // consumed; wait for next update before next iteration
-  AdvancePathSegment(); // check if we reached the next waypoint
-  if (PathComplete()) {
-    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                 motor_accel, 0,
-                                 motor_accel, 0);
-    Serial.println("Path Complete");
-    inRangingHandler = false;
-    return;
-  }
+//   GoalResult goal = findLookaheadGoal();
 
-  GoalResult goal = findLookaheadGoal();
+//   delta_x = goal.gx - currentX_global;
+//   delta_y = goal.gy - currentY_global;
 
-  delta_x = goal.gx - currentX_global;
-  delta_y = goal.gy - currentY_global;
+//   float angleToGoal = atan2f(delta_y, delta_x);
+//   // Serial.print("Goal xy: ");
+//   // Serial.println(goal.gx);
+//   // Serial.println(goal.gy);
+//   float DesiredHeading = radiansToDegrees(angleToGoal);
+//   // Serial.print("Desired Heading: ");
+//   Serial.println(DesiredHeading);
+//   float azimuth_deg = radiansToDegrees(global_azimuth);
+//   Serial.println(azimuth_deg);
+//   // Serial.println(currentX_global);
+//   // Serial.println(currentY_global);
 
-  float angleToGoal = atan2f(delta_y, delta_x);
-  // Serial.print("Goal xy: ");
-  // Serial.println(goal.gx);
-  // Serial.println(goal.gy);
-  float DesiredHeading = radiansToDegrees(angleToGoal);
-  // Serial.print("Desired Heading: ");
-  Serial.println(DesiredHeading);
-  float azimuth_deg = radiansToDegrees(global_azimuth);
-  Serial.println(azimuth_deg);
-  // Serial.println(currentX_global);
-  // Serial.println(currentY_global);
+//   L_d2 = delta_x * delta_x + delta_y * delta_y;
+//   L_d = sqrtf(L_d2);
 
-  L_d2 = delta_x * delta_x + delta_y * delta_y;
-  L_d = sqrtf(L_d2);
+//   float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
-  float alpha = wrapAnglePi(angleToGoal - global_azimuth);
+//   if (L_d < 1.0f) {
+//     K = 0.0f;
+//     controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+//                                  motor_accel, 0,
+//                                  motor_accel, 0);
+//   } else {
+//     K = 2.0f * sinf(alpha) / L_d;
+//     omega = K * velocity;
+//     leftMotor  = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
+//     rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
+// // Serial.println(leftMotor);
+// // Serial.println(rightMotor);
+//     int32_t leftCounts  = (int32_t)(leftMotor  * RAD_TO_COUNTS);
+//     int32_t rightCounts = (int32_t)(rightMotor * RAD_TO_COUNTS);
 
-  if (L_d < 1.0f) {
-    K = 0.0f;
-    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                 motor_accel, 0,
-                                 motor_accel, 0);
-  } else {
-    K = 2.0f * sinf(alpha) / L_d;
-    omega = K * velocity;
-    leftMotor  = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
-    rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
-// Serial.println(leftMotor);
-// Serial.println(rightMotor);
-    int32_t leftCounts  = (int32_t)(leftMotor  * RAD_TO_COUNTS);
-    int32_t rightCounts = (int32_t)(rightMotor * RAD_TO_COUNTS);
-
-    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                 motor_accel, (uint32_t)rightCounts,
-                                 motor_accel, (uint32_t)leftCounts);
-  }
+//     controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+//                                  motor_accel, (uint32_t)rightCounts,
+//                                  motor_accel, (uint32_t)leftCounts);
+//   }
 }

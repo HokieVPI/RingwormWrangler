@@ -185,57 +185,57 @@ close all
 % hold off
 
 %% data2 1
-
-data2_1 = readcell("test_2_23_1");
-robotx = [];
-desiredHeading = [];
-globalHeading = [];
-roboty = [];
-goalx = [];
-goaly = [];
-curvatureCoeff = [];
-i = 1;
-while i <= height(data2_1)-9
-    goalx = [goalx; str2double(extractAfter(string(data2_1(i,1)),"Goal xy"))];
-    goaly = [goaly; cell2mat(data2_1(i+1,1))];
-    desiredHeading = [desiredHeading; cell2mat(data2_1(i+2,2))];
-    globalHeading = [globalHeading; cell2mat(data2_1(i+3,2))];
-    robotx = [robotx; cell2mat(data2_1(i+4,1))];
-    roboty = [roboty; cell2mat(data2_1(i+5,1))];
-    i = i+6;
-end
-desiredHeading = desiredHeading;
-globalHeading = globalHeading;
-robotx = robotx;
-roboty = roboty;
-goalx = goalx;
-goaly = goaly;
-figure
-hold on
-line(robotx,roboty)
-scatter(goalx,goaly,'g')
-xlim([0, 2133.6])
-ylim([0, 2641])
-wx = [300; 300; 600; 900];
-wy = [1262; 1862; 2162; 1862];
-scatter(wx,wy,'magenta')
-mapArea = [0 0;
-    70*2.54*12 0;
-    70*2.54*12 32.4*2.54*12;
-    (70-2)*2.54*12 (32.4)*2.54*12;
-    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
-    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
-    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
-    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
-    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
-    0 (32.4+19.81+14.75+20)*2.54*12;
-    0 0];
-plot(mapArea(:,1),mapArea(:,2))
-title("Goal Point Verification")
-xlabel("x position (cm)")
-ylabel("y position (cm)")
-legend("Robot Path", "Goal Point", "Waypoint", "Mat Area")
-hold off
+% 
+% data2_1 = readcell("test_2_23_1");
+% robotx = [];
+% desiredHeading = [];
+% globalHeading = [];
+% roboty = [];
+% goalx = [];
+% goaly = [];
+% curvatureCoeff = [];
+% i = 1;
+% while i <= height(data2_1)-9
+%     goalx = [goalx; str2double(extractAfter(string(data2_1(i,1)),"Goal xy"))];
+%     goaly = [goaly; cell2mat(data2_1(i+1,1))];
+%     desiredHeading = [desiredHeading; cell2mat(data2_1(i+2,2))];
+%     globalHeading = [globalHeading; cell2mat(data2_1(i+3,2))];
+%     robotx = [robotx; cell2mat(data2_1(i+4,1))];
+%     roboty = [roboty; cell2mat(data2_1(i+5,1))];
+%     i = i+6;
+% end
+% desiredHeading = desiredHeading;
+% globalHeading = globalHeading;
+% robotx = robotx;
+% roboty = roboty;
+% goalx = goalx;
+% goaly = goaly;
+% figure
+% hold on
+% line(robotx,roboty)
+% scatter(goalx,goaly,'g')
+% xlim([0, 2133.6])
+% ylim([0, 2641])
+% wx = [300; 300; 600; 900];
+% wy = [1262; 1862; 2162; 1862];
+% scatter(wx,wy,'magenta')
+% mapArea = [0 0;
+%     70*2.54*12 0;
+%     70*2.54*12 32.4*2.54*12;
+%     (70-2)*2.54*12 (32.4)*2.54*12;
+%     (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+%     (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+%     (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+%     (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+%     (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+%     0 (32.4+19.81+14.75+20)*2.54*12;
+%     0 0];
+% plot(mapArea(:,1),mapArea(:,2))
+% title("Goal Point Verification")
+% xlabel("x position (cm)")
+% ylabel("y position (cm)")
+% legend("Robot Path", "Goal Point", "Waypoint", "Mat Area")
+% hold off
 % have this included
 %% data2_2
 % data2_1 = readcell("test_2_23_2");
@@ -485,7 +485,7 @@ hold off
 
 %% data3 6
 
-data3_6= importdata("test_2_24_6");
+data3_6= importdata("test_3_28_2");
 data3_6 = data3_6.data;
 robotx = [];
 roboty = [];
@@ -502,7 +502,7 @@ hold on
 scatter(robotx,roboty)
 xlim([0, 2133.6])
 ylim([0, 2641])
-scatter(211*2.54,148*2.54,'magenta',"filled")
+scatter(797.05,706.69,'magenta',"filled") % refrence point 
 mapArea = [0 0;
     70*2.54*12 0;
     70*2.54*12 32.4*2.54*12;
