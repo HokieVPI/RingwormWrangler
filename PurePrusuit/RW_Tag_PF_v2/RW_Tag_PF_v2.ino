@@ -60,7 +60,7 @@ volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
 static constexpr int waypoint_radius = 50; // cm
-static constexpr float look_ahead=200.0f; // cm 
+static constexpr float look_ahead=100.0f; // cm 
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -277,12 +277,15 @@ void rangingHandler(UWBRangingData &rangingData) {
     if (twr[j].peer_addr[0] == 0x22 && twr[j].peer_addr[1] == 0x22) {
       dist_1 = twr[j].distance;
       anchor1_received = true;
+      // Serial.println(dist_1);
     } else if (twr[j].peer_addr[0] == 0x33 && twr[j].peer_addr[1] == 0x33) {
       dist_2 = twr[j].distance;
       anchor2_received = true;
+      // Serial.println(dist_2);
       } else if (twr[j].peer_addr[0] == 0x44 && twr[j].peer_addr[1] == 0x44) {
       dist_3 = twr[j].distance;
       anchor3_received = true;
+      Serial.println(dist_3);
     }
   }
   
