@@ -21,12 +21,20 @@ float insight_A2;
 float insight_A3;
 // Anchor Locations in Centimeters (x,y) z=0 
 
-const float Anchor1_x=0.5;// cm 
-const float Anchor1_y=1271.02; // cm 
-const float Anchor2_x=1280.16; // cm 
-const float Anchor2_y=0.5; // cm 
-const float Anchor3_x=2133.60; // cm 
-const float Anchor3_y=1158.24; // cm 
+const float Anchor1_x=0;// cm 
+const float Anchor1_y=1273.45; // cm  41.78 ft 
+const float Anchor2_x=1280.16; // cm  42.23ft 
+const float Anchor2_y=0; // cm 
+const float Anchor3_x=2090.01; // cm 
+const float Anchor3_y=1125.32; // cm 36.92 ft 
+
+// const float Anchor1_x=0.5;// cm 
+// const float Anchor1_y=1271.02; // cm 
+// const float Anchor2_x=1280.16; // cm 
+// const float Anchor2_y=0.5; // cm 
+// const float Anchor3_x=2133.60; // cm 
+// const float Anchor3_y=1158.24; // cm 
+
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=0; // cm 
 // const float Anchor2_x=719; // cm 
