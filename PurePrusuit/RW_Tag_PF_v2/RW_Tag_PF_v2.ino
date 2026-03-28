@@ -20,9 +20,9 @@
 const float Anchor1_x=1296.924;// cm 
 const float Anchor1_y=4.572; // cm 
 const float Anchor2_x=4.572; // cm 
-const float Anchor2_y=1141.781; // cm 
-const float Anchor3_x=2087.88; // cm 
-const float Anchor3_y=1264.92; // cm 
+const float Anchor2_y=1280.000; // cm 
+const float Anchor3_x=1264.92; // cm 
+const float Anchor3_y=2087.88; // cm 
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=0; // cm 
 // const float Anchor2_x=719; // cm 
@@ -48,9 +48,9 @@ double Azimuth = 0.0f; // rad
 double global_azimuth = 0.0f; // rad
 
 // constants 
-static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
+static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 4 ;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 2.0f; // cm 
+const float MinMovement = 0.5f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
@@ -59,8 +59,8 @@ int tail_index = CIRCULAR_BUFFER_SIZE-1;
 volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
-static constexpr int waypoint_radius = 25; // cm
-static constexpr float look_ahead=100.0f; // cm 
+static constexpr int waypoint_radius = 50; // cm
+static constexpr float look_ahead=200.0f; // cm 
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -68,7 +68,7 @@ float L_d; // Look-Ahead Distance in cm
 float L_d2; // Look-Ahead Distance squared 
 float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
-const float velocity = 50.0f;  // Constant Velocity in cm/s
+const float velocity = 100.0f;  // Constant Velocity in cm/s
 static constexpr int wheelRadius = 15;  //cm 
 static constexpr int trackWidth =43.18;  // Wheel to Wheel in cm 
 float leftMotor; 
