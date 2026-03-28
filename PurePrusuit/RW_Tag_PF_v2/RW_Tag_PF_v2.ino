@@ -60,7 +60,7 @@ volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
 static constexpr int waypoint_radius = 25; // cm
-static constexpr float look_ahead=125.0f; // cm 
+static constexpr float look_ahead=100.0f; // cm 
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -80,7 +80,7 @@ UART controllerSerial(14, 13);
 #define MOTOR_ADDRESS        128
 #define LIBRARY_READ_TIMEOUT 10000
 
-static constexpr float ENCODER_CPR   = 24293.0f;
+static constexpr float ENCODER_CPR   = -24293.0f;
 static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
 uint32_t motor_accel = 25000;
 
@@ -530,7 +530,7 @@ void loop() {
     int32_t rightCounts = (int32_t)(rightMotor * RAD_TO_COUNTS);
 
     controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                 motor_accel, (uint32_t)leftCounts,
-                                 motor_accel, (uint32_t)rightCounts);
+                                 motor_accel, (uint32_t)rightCounts,
+                                 motor_accel, (uint32_t)leftCounts);
   }
 }
