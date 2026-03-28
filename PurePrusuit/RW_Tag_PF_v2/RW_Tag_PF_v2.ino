@@ -15,6 +15,10 @@
  used cursor--- need to verify code 
  **/
 
+// In line of sight 
+float insight_A1;
+float insight_A2;
+float insight_A3;
 // Anchor Locations in Centimeters (x,y) z=0 
 
 const float Anchor1_x=0.5;// cm 
@@ -263,14 +267,20 @@ void rangingHandler(UWBRangingData &rangingData) {
     if (twr[j].peer_addr[0] == 0x22 && twr[j].peer_addr[1] == 0x22) {
       dist_1 = twr[j].distance;
       anchor1_received = true;
+      //  insight_A3=twr[j].nlos;
+          // Serial.println(insight_A1);
       // Serial.println(dist_1);
     } else if (twr[j].peer_addr[0] == 0x33 && twr[j].peer_addr[1] == 0x33) {
       dist_2 = twr[j].distance;
       anchor2_received = true;
+      // insight_A2=twr[j].nlos;
+        //  Serial.println(insight_A2);
       // Serial.println(dist_2);
       } else if (twr[j].peer_addr[0] == 0x44 && twr[j].peer_addr[1] == 0x44) {
       dist_3 = twr[j].distance;
+      //  insight_A3=twr[j].nlos;
       anchor3_received = true;
+        //  Serial.println(insight_A3);
       // Serial.println(dist_3);
     }
   }
