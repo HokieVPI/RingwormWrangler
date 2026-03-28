@@ -17,12 +17,12 @@
 
 // Anchor Locations in Centimeters (x,y) z=0 
 
-const float Anchor1_x=1296.924;// cm 
-const float Anchor1_y=4.572; // cm 
-const float Anchor2_x=4.572; // cm 
-const float Anchor2_y=1280.000; // cm 
-const float Anchor3_x=1264.92; // cm 
-const float Anchor3_y=2087.88; // cm 
+const float Anchor1_x=0.5;// cm 
+const float Anchor1_y=1271.02; // cm 
+const float Anchor2_x=1280.16; // cm 
+const float Anchor2_y=0.5; // cm 
+const float Anchor3_x=2133.60; // cm 
+const float Anchor3_y=1158.24; // cm 
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=0; // cm 
 // const float Anchor2_x=719; // cm 
@@ -104,8 +104,8 @@ struct GoalResult {
 //  establish path length and waypoints
 static constexpr int PATH_LENGTH = 2;
 static Waypoint path[PATH_LENGTH] = {
-  {890, 308},
-  {890, 1097}
+  {890,308},
+  {890,1097}
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){

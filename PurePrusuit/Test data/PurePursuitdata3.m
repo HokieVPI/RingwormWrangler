@@ -179,11 +179,10 @@ axis equal
 hold off
 
 %% test_3_23_8
-waypoints8 = [75 60;
-              145 75;
-              250 90];
+waypoints8 = [890 308;
+              890 1097];
 
-fid = fopen("test_3_23_8", "r");
+fid = fopen("test_3_27_1", "r");
 lines = {};
 while ~feof(fid)
     lines{end+1} = fgetl(fid);
