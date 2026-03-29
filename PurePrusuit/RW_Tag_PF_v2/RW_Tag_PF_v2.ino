@@ -83,7 +83,7 @@ float L_d2; // Look-Ahead Distance squared
 float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
 const float velocity = 50.0f;  // Constant Velocity in cm/s
-static constexpr int wheelRadius = 15;  //cm 
+static constexpr float wheelRadius = 15.24;  //cm 
 static constexpr float trackWidth =43.18;  // Wheel to Wheel in cm 
 float leftMotor; 
 float rightMotor; 
@@ -233,6 +233,14 @@ float radiansToDegrees(float a) {
   return a * (180.0/PI);
 }
 
+void driveMotors(float leftRadPerSec, float rightRadPerSec) {
+  const int32_t MAX_MOTOR_COUNTS = 70000;
+  int32_t leftCounts  = constrain((int32_t)(leftRadPerSec  * RAD_TO_COUNTS), -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
+  int32_t rightCounts = constrain((int32_t)(rightRadPerSec * RAD_TO_COUNTS), -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
+  controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                               motor_accel, (uint32_t)rightCounts,
+                               motor_accel, (uint32_t)leftCounts);
+}
 
 // handler for ranging notifications
 void rangingHandler(UWBRangingData &rangingData) {
@@ -385,13 +393,8 @@ float prevY=0.0f;
     // Serial.print("Azimuth invalid  ");
     staleCount++;
     if(staleCount >= MAX_STALE) {
-      // Moves the robot forward when min movement is not met
-      float minDrive=0.5f*velocity;// cm/s
-      float minMotorCmd=minDrive/wheelRadius;
-      int32_t minCounts=(int32_t)(minMotorCmd*RAD_TO_COUNTS);
-      controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                   motor_accel, (int32_t)(-minCounts),
-                                   motor_accel, (int32_t)(-minCounts));
+      float minDrive = 0.5f * velocity / wheelRadius;
+      driveMotors(-minDrive, -minDrive);
     }
 
   }
@@ -478,9 +481,7 @@ delay(10);
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
   if (PathComplete()) {
-    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                 motor_accel, 0,
-                                 motor_accel, 0);
+    driveMotors(0, 0);
     Serial.println("Path Complete");
     inRangingHandler = false;
     return;
@@ -510,25 +511,12 @@ delay(10);
 
   if (L_d < 1.0f) {
     K = 0.0f;
-    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                 motor_accel, 0,
-                                 motor_accel, 0);
+    driveMotors(0, 0);
   } else {
     K = 2.0f * sinf(alpha) / L_d;
     omega = K * velocity;
     leftMotor  = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
     rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
-// Serial.println(leftMotor);
-// Serial.println(rightMotor);
-    int32_t leftCounts  = (int32_t)(leftMotor  * RAD_TO_COUNTS);
-    int32_t rightCounts = (int32_t)(rightMotor * RAD_TO_COUNTS);
-
-    const int32_t MAX_MOTOR_COUNTS = 70000;
-    leftCounts  = constrain(leftCounts,  -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
-    rightCounts = constrain(rightCounts, -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
-
-    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                 motor_accel, (uint32_t)rightCounts,
-                                 motor_accel, (uint32_t)leftCounts);
+    driveMotors(leftMotor, rightMotor);
   }
 }
