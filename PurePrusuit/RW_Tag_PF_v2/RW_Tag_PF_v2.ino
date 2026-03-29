@@ -74,7 +74,10 @@ volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
 static constexpr int waypoint_radius = 50; // cm
-static constexpr float look_ahead=200.0f; // cm 
+static constexpr float look_ahead=200.0f; // cm (max lookahead)
+static constexpr float MIN_LOOKAHEAD = 80.0f; // cm (min lookahead on sharp turns)
+float adaptiveLookahead = look_ahead;
+static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -174,7 +177,7 @@ void AdvancePathSegment(){
 GoalResult findLookaheadGoal() {
   GoalResult result;
   result.found = false;
-  float Lsq = look_ahead * look_ahead;
+  float Lsq = adaptiveLookahead * adaptiveLookahead;
 
   for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
     float dsx = path[seg + 1].wp_x - path[seg].wp_x;
@@ -508,6 +511,17 @@ delay(10);
 
   float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
+  float absAlpha = fabsf(alpha);
+  float speedScale = 1.0f;
+  if (absAlpha > PI / 4.0f) {
+    speedScale = (PI - absAlpha) / PI;
+    if (speedScale < MIN_SPEED_SCALE) speedScale = MIN_SPEED_SCALE;
+  }
+  float cmdVelocity = velocity * speedScale;
+
+  adaptiveLookahead = look_ahead * speedScale;
+  if (adaptiveLookahead < MIN_LOOKAHEAD) adaptiveLookahead = MIN_LOOKAHEAD;
+
   if (L_d < 1.0f) {
     K = 0.0f;
     controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
@@ -515,9 +529,9 @@ delay(10);
                                  motor_accel, 0);
   } else {
     K = 2.0f * sinf(alpha) / L_d;
-    omega = K * velocity;
-    leftMotor  = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
-    rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
+    omega = K * cmdVelocity;
+    leftMotor  = (cmdVelocity - omega * trackWidth / 2.0f) / wheelRadius;
+    rightMotor = (cmdVelocity + omega * trackWidth / 2.0f) / wheelRadius;
 // Serial.println(leftMotor);
 // Serial.println(rightMotor);
     int32_t leftCounts  = (int32_t)(leftMotor  * RAD_TO_COUNTS);
