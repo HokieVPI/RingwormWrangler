@@ -51,19 +51,21 @@ bool anchor1_received = false;
 bool anchor2_received = false;
 bool anchor3_received = false;
 //previous position state variable 
-double currentX_global = 0.0f;// cm 
-double currentY_global = 0.0f;// cm 
+double volatilecurrentX_global = 0.0f;// cm 
+double volatile currentY_global = 0.0f;// cm 
 bool prev_valid = false;
 
 // Heading State Variable 
 double Azimuth = 0.0f; // rad
-double global_azimuth = 0.0f; // rad
+double volatile global_azimuth = 0.0f; // rad
 
 // constants 
-static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 4 ;
+static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
 const float MinMovement = 0.5f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
+static int staleCount = 0;
+const int MAX_STALE = 5;
 float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
 int head_index = 0;
@@ -82,7 +84,7 @@ float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
 const float velocity = 50.0f;  // Constant Velocity in cm/s
 static constexpr int wheelRadius = 15;  //cm 
-static constexpr int trackWidth =43.18;  // Wheel to Wheel in cm 
+static constexpr float trackWidth =43.18;  // Wheel to Wheel in cm 
 float leftMotor; 
 float rightMotor; 
 
@@ -172,44 +174,28 @@ void AdvancePathSegment(){
 GoalResult findLookaheadGoal() {
   GoalResult result;
   result.found = false;
-
   float Lsq = look_ahead * look_ahead;
 
-bool miss_wp;
-miss_wp = true;
-
-while (miss_wp)  {
-  // Search each segment from pathSegIdx forward
   for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
+    float dsx = path[seg + 1].wp_x - path[seg].wp_x;
+    float dsy = path[seg + 1].wp_y - path[seg].wp_y;
 
-    // Segment endpoints A -> B from existing path[] array
-    float dsx = path[seg + 1].wp_x - path[seg].wp_x;   // segment direction x
-    float dsy = path[seg + 1].wp_y - path[seg].wp_y;   // segment direction y
+    float fx = path[seg].wp_x - (float)currentX_global;
+    float fy = path[seg].wp_y - (float)currentY_global;
 
-    float fx = path[seg].wp_x - (float)currentX_global;  // segment start relative to robot x
-    float fy = path[seg].wp_y - (float)currentY_global;  // segment start relative to robot y
-
-    // Quadratic coefficients for circle-segment intersection
     float qa = dsx * dsx + dsy * dsy;
     float qb = 2.0f * (fx * dsx + fy * dsy);
     float qc = (fx * fx + fy * fy) - Lsq;
 
     float discriminant = qb * qb - 4.0f * qa * qc;
 
-    if (discriminant < 0.0f){ 
-      result.gx = path[seg].wp_x;
-      result.gy = path[seg].wp_y;
-      result.found = true;
-      return result;  // first valid hit on the earliest forward segment
-      miss_wp=false; // circle misses this segment
-    } else{
+    if (discriminant < 0.0f) continue;
+
     float sqrtDisc = sqrtf(discriminant);
 
-    // Two candidate parameter values along the segment (0 = start, 1 = end)
     float t1 = (-qb - sqrtDisc) / (2.0f * qa);
     float t2 = (-qb + sqrtDisc) / (2.0f * qa);
 
-    // Pick the largest valid t (furthest forward on segment)
     float bestT = -1.0f;
     if (t2 >= 0.0f && t2 <= 1.0f) {
       bestT = t2;
@@ -221,24 +207,16 @@ while (miss_wp)  {
       result.gx = path[seg].wp_x + bestT * dsx;
       result.gy = path[seg].wp_y + bestT * dsy;
       result.found = true;
-      return result;  // first valid hit on the earliest forward segment
+      return result;
     }
   }
-  }
-  miss_wp=false;
-  
 
   // Fallback: no intersection found, aim at next waypoint directly
-  // could increase lookahead distance or 
-  if (!result.found) {
-    int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
-    result.gx = path[nextWp].wp_x;
-    result.gy = path[nextWp].wp_y;
-    result.found = true;
-  }
-
+  int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
+  result.gx = path[nextWp].wp_x;
+  result.gy = path[nextWp].wp_y;
+  result.found = true;
   return result;
-}
 }
 
 //----------end pure pursuit functions----------//
@@ -402,10 +380,20 @@ float prevY=0.0f;
   if (dist_sq >= minMovement_sq) {
     Azimuth = atan2f(dy, dx);
     global_azimuth = Azimuth;
+    staleCount = 0;
   }else{
     // Serial.print("Azimuth invalid  ");
-    inRangingHandler = false;
-    return;
+    staleCount++;
+    if(staleCount >= MAX_STALE) {
+      // Moves the robot forward when min movement is not met
+      float minDrive=0.5f*velocity;// cm/s
+      float minMotorCmd=minDrive/wheelRadius;
+      int32_t minCounts=(int32_t)(minMotorCmd*RAD_TO_COUNTS);
+      controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                   motor_accel, (int32_t)(-minCounts),
+                                   motor_accel, (int32_t)(-minCounts));
+    }
+
   }
 
   newPosition = true;
@@ -484,59 +472,63 @@ void loop() {
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
 delay(10);
-//   while (inRangingHandler || !newPosition) {
-//     delay(10);
-//   }
-//   newPosition = false;  // consumed; wait for next update before next iteration
-//   AdvancePathSegment(); // check if we reached the next waypoint
-//   if (PathComplete()) {
-//     controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-//                                  motor_accel, 0,
-//                                  motor_accel, 0);
-//     Serial.println("Path Complete");
-//     inRangingHandler = false;
-//     return;
-//   }
+  while (inRangingHandler || !newPosition) {
+    delay(10);
+  }
+  newPosition = false;  // consumed; wait for next update before next iteration
+  AdvancePathSegment(); // check if we reached the next waypoint
+  if (PathComplete()) {
+    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                 motor_accel, 0,
+                                 motor_accel, 0);
+    Serial.println("Path Complete");
+    inRangingHandler = false;
+    return;
+  }
 
-//   GoalResult goal = findLookaheadGoal();
+  GoalResult goal = findLookaheadGoal();
 
-//   delta_x = goal.gx - currentX_global;
-//   delta_y = goal.gy - currentY_global;
+  delta_x = goal.gx - currentX_global;
+  delta_y = goal.gy - currentY_global;
 
-//   float angleToGoal = atan2f(delta_y, delta_x);
-//   // Serial.print("Goal xy: ");
-//   // Serial.println(goal.gx);
-//   // Serial.println(goal.gy);
-//   float DesiredHeading = radiansToDegrees(angleToGoal);
-//   // Serial.print("Desired Heading: ");
-//   Serial.println(DesiredHeading);
-//   float azimuth_deg = radiansToDegrees(global_azimuth);
-//   Serial.println(azimuth_deg);
-//   // Serial.println(currentX_global);
-//   // Serial.println(currentY_global);
+  float angleToGoal = atan2f(delta_y, delta_x);
+  // Serial.print("Goal xy: ");
+  // Serial.println(goal.gx);
+  // Serial.println(goal.gy);
+  float DesiredHeading = radiansToDegrees(angleToGoal);
+  // Serial.print("Desired Heading: ");
+  Serial.println(DesiredHeading);
+  float azimuth_deg = radiansToDegrees(global_azimuth);
+  Serial.println(azimuth_deg);
+  // Serial.println(currentX_global);
+  // Serial.println(currentY_global);
 
-//   L_d2 = delta_x * delta_x + delta_y * delta_y;
-//   L_d = sqrtf(L_d2);
+  L_d2 = delta_x * delta_x + delta_y * delta_y;
+  L_d = sqrtf(L_d2);
 
-//   float alpha = wrapAnglePi(angleToGoal - global_azimuth);
+  float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
-//   if (L_d < 1.0f) {
-//     K = 0.0f;
-//     controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-//                                  motor_accel, 0,
-//                                  motor_accel, 0);
-//   } else {
-//     K = 2.0f * sinf(alpha) / L_d;
-//     omega = K * velocity;
-//     leftMotor  = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
-//     rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
-// // Serial.println(leftMotor);
-// // Serial.println(rightMotor);
-//     int32_t leftCounts  = (int32_t)(leftMotor  * RAD_TO_COUNTS);
-//     int32_t rightCounts = (int32_t)(rightMotor * RAD_TO_COUNTS);
+  if (L_d < 1.0f) {
+    K = 0.0f;
+    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                 motor_accel, 0,
+                                 motor_accel, 0);
+  } else {
+    K = 2.0f * sinf(alpha) / L_d;
+    omega = K * velocity;
+    leftMotor  = (velocity - omega * trackWidth / 2.0f) / wheelRadius;
+    rightMotor = (velocity + omega * trackWidth / 2.0f) / wheelRadius;
+// Serial.println(leftMotor);
+// Serial.println(rightMotor);
+    int32_t leftCounts  = (int32_t)(leftMotor  * RAD_TO_COUNTS);
+    int32_t rightCounts = (int32_t)(rightMotor * RAD_TO_COUNTS);
 
-//     controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-//                                  motor_accel, (uint32_t)rightCounts,
-//                                  motor_accel, (uint32_t)leftCounts);
-//   }
+    const int32_t MAX_MOTOR_COUNTS = 70000;
+    leftCounts  = constrain(leftCounts,  -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
+    rightCounts = constrain(rightCounts, -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
+
+    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                 motor_accel, (uint32_t)rightCounts,
+                                 motor_accel, (uint32_t)leftCounts);
+  }
 }
