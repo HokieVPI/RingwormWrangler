@@ -1,9 +1,16 @@
 """
+<<<<<<< Updated upstream
 Pure Pursuit Monte Carlo Simulation — Adaptive vs Fixed
 Matches the algorithm in RW_Tag_PF_v2.ino with injected sensor noise.
   - Position noise: ±15 cm (uniform)
   - Heading noise:  ±25 deg (uniform)
 Compares fixed velocity/lookahead against adaptive speed + adaptive lookahead.
+=======
+Pure Pursuit Monte Carlo Simulation
+Matches the algorithm in RW_Tag_PF_v2.ino with injected sensor noise.
+  - Position noise: ±15 cm (uniform)
+  - Heading noise:  ±25 deg (uniform)
+>>>>>>> Stashed changes
 """
 
 import math
@@ -13,6 +20,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 # ---------- Robot / controller constants (from .ino) ----------
+<<<<<<< Updated upstream
 VELOCITY = 50.0           # cm/s
 WHEEL_RADIUS = 15.0       # cm
 TRACK_WIDTH = 43.18       # cm
@@ -20,6 +28,13 @@ LOOK_AHEAD = 200.0        # cm (max)
 MIN_LOOKAHEAD = 80.0      # cm (min on sharp turns)
 WAYPOINT_RADIUS = 50      # cm
 MIN_SPEED_SCALE = 0.2     # floor at 20% velocity
+=======
+VELOCITY = 50.0          # cm/s
+WHEEL_RADIUS = 15.24     # cm
+TRACK_WIDTH = 43.18       # cm
+LOOK_AHEAD = 200.0        # cm
+WAYPOINT_RADIUS = 50      # cm
+>>>>>>> Stashed changes
 
 # ---------- Waypoints ----------
 PATH = np.array([
@@ -32,13 +47,21 @@ PATH = np.array([
 # ---------- Simulation parameters ----------
 DT = 0.1                  # time step (s)
 MAX_TIME = 300            # max sim seconds
+<<<<<<< Updated upstream
 NUM_RUNS = 30             # Monte Carlo runs per mode
+=======
+NUM_RUNS = 20             # Monte Carlo runs
+>>>>>>> Stashed changes
 POS_NOISE = 15.0          # cm uniform half-range
 HDG_NOISE_DEG = 25.0      # deg uniform half-range
 HDG_NOISE = math.radians(HDG_NOISE_DEG)
 
 START_X, START_Y = 890, 200
+<<<<<<< Updated upstream
 START_THETA = math.pi / 2
+=======
+START_THETA = math.pi / 2  # facing north toward first waypoint
+>>>>>>> Stashed changes
 
 
 def wrap_pi(a):
@@ -78,6 +101,7 @@ def find_lookahead_goal(cx, cy, seg_idx, path, L):
         if best_t >= 0.0:
             gx = path[seg, 0] + best_t * dsx
             gy = path[seg, 1] + best_t * dsy
+<<<<<<< Updated upstream
             return gx, gy
 
     nxt = min(seg_idx + 1, len(path) - 1)
@@ -85,11 +109,23 @@ def find_lookahead_goal(cx, cy, seg_idx, path, L):
 
 
 def run_sim(rng, pos_noise, hdg_noise, adaptive=False):
+=======
+            return gx, gy, True
+
+    nxt = min(seg_idx + 1, len(path) - 1)
+    return path[nxt, 0], path[nxt, 1], True
+
+
+def run_sim(rng, pos_noise, hdg_noise):
+>>>>>>> Stashed changes
     x, y, theta = START_X, START_Y, START_THETA
     seg_idx = 0
     xs, ys = [x], [y]
     t = 0.0
+<<<<<<< Updated upstream
     current_lookahead = LOOK_AHEAD
+=======
+>>>>>>> Stashed changes
 
     while t < MAX_TIME:
         if seg_idx >= len(PATH) - 1:
@@ -98,10 +134,18 @@ def run_sim(rng, pos_noise, hdg_noise, adaptive=False):
             if dx * dx + dy * dy <= WAYPOINT_RADIUS ** 2:
                 break
 
+<<<<<<< Updated upstream
+=======
+        # --- noisy sensor readings ---
+>>>>>>> Stashed changes
         meas_x = x + rng.uniform(-pos_noise, pos_noise)
         meas_y = y + rng.uniform(-pos_noise, pos_noise)
         meas_theta = theta + rng.uniform(-hdg_noise, hdg_noise)
 
+<<<<<<< Updated upstream
+=======
+        # advance waypoint using noisy position
+>>>>>>> Stashed changes
         if seg_idx < len(PATH) - 1:
             nxt = seg_idx + 1
             ddx = PATH[nxt, 0] - meas_x
@@ -111,8 +155,12 @@ def run_sim(rng, pos_noise, hdg_noise, adaptive=False):
                 if seg_idx >= len(PATH) - 1:
                     continue
 
+<<<<<<< Updated upstream
         L = current_lookahead if adaptive else LOOK_AHEAD
         gx, gy = find_lookahead_goal(meas_x, meas_y, seg_idx, PATH, L)
+=======
+        gx, gy, _ = find_lookahead_goal(meas_x, meas_y, seg_idx, PATH, LOOK_AHEAD)
+>>>>>>> Stashed changes
 
         dx_g = gx - meas_x
         dy_g = gy - meas_y
@@ -124,6 +172,7 @@ def run_sim(rng, pos_noise, hdg_noise, adaptive=False):
             omega = 0.0
         else:
             alpha = wrap_pi(angle_to_goal - meas_theta)
+<<<<<<< Updated upstream
 
             if adaptive:
                 abs_alpha = abs(alpha)
@@ -143,6 +192,13 @@ def run_sim(rng, pos_noise, hdg_noise, adaptive=False):
             omega = K * cmd_vel
             v_cmd = cmd_vel
 
+=======
+            K = 2.0 * math.sin(alpha) / Ld
+            omega = K * VELOCITY
+            v_cmd = VELOCITY
+
+        # differential drive kinematics (true state update, no noise)
+>>>>>>> Stashed changes
         left_w = (v_cmd - omega * TRACK_WIDTH / 2.0) / WHEEL_RADIUS
         right_w = (v_cmd + omega * TRACK_WIDTH / 2.0) / WHEEL_RADIUS
         vl = left_w * WHEEL_RADIUS
@@ -162,6 +218,7 @@ def run_sim(rng, pos_noise, hdg_noise, adaptive=False):
     return np.array(xs), np.array(ys)
 
 
+<<<<<<< Updated upstream
 def compute_cte(xs, ys, path):
     ctes = []
     for px, py in zip(xs, ys):
@@ -169,6 +226,61 @@ def compute_cte(xs, ys, path):
         for seg in range(len(path) - 1):
             ax_, ay_ = path[seg]
             bx_, by_ = path[seg + 1]
+=======
+# ---------- Run simulations ----------
+rng = np.random.default_rng(42)
+
+fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+
+configs = [
+    ("No noise (ideal)", 0.0, 0.0, "black", 2.5),
+]
+
+for run_i in range(NUM_RUNS):
+    configs.append(
+        (f"Run {run_i+1}" if run_i == 0 else None,
+         POS_NOISE, HDG_NOISE, None, 0.8)
+    )
+
+# ---- Left plot: all runs overlaid ----
+ax = axes[0]
+for label, pn, hn, color, lw in configs:
+    xs, ys = run_sim(rng, pn, hn)
+    if color:
+        ax.plot(xs, ys, color=color, linewidth=lw, label=label, zorder=5)
+    else:
+        ax.plot(xs, ys, alpha=0.35, linewidth=lw,
+                label=f"±{int(POS_NOISE)}cm pos, ±{int(HDG_NOISE_DEG)}° hdg" if label else None)
+
+ax.plot(PATH[:, 0], PATH[:, 1], 'r--o', linewidth=2, markersize=8, label="Waypoints", zorder=4)
+for i, (wx, wy) in enumerate(PATH):
+    circle = plt.Circle((wx, wy), WAYPOINT_RADIUS, fill=False, color='red', linestyle=':', alpha=0.5)
+    ax.add_patch(circle)
+    ax.annotate(f"WP{i}", (wx, wy), textcoords="offset points", xytext=(10, 10), fontsize=9)
+
+ax.plot(START_X, START_Y, 'g^', markersize=12, label="Start", zorder=6)
+ax.set_xlabel("X (cm)")
+ax.set_ylabel("Y (cm)")
+ax.set_title(f"Pure Pursuit — {NUM_RUNS} runs\n±{int(POS_NOISE)}cm position, ±{int(HDG_NOISE_DEG)}° heading noise")
+ax.legend(loc="lower right", fontsize=8)
+ax.set_aspect("equal")
+ax.grid(True, alpha=0.3)
+
+# ---- Right plot: cross-track error distribution ----
+ax2 = axes[1]
+all_cte = []
+
+for _ in range(NUM_RUNS):
+    xs, ys = run_sim(rng, POS_NOISE, HDG_NOISE)
+    cte_run = []
+    for px, py in zip(xs, ys):
+        min_dist = float("inf")
+        for seg in range(len(PATH) - 1):
+            ax_ = PATH[seg, 0]
+            ay_ = PATH[seg, 1]
+            bx_ = PATH[seg + 1, 0]
+            by_ = PATH[seg + 1, 1]
+>>>>>>> Stashed changes
             abx = bx_ - ax_
             aby = by_ - ay_
             t_param = max(0, min(1, ((px - ax_) * abx + (py - ay_) * aby) / (abx * abx + aby * aby + 1e-12)))
@@ -176,6 +288,7 @@ def compute_cte(xs, ys, path):
             cy_ = ay_ + t_param * aby
             d = math.sqrt((px - cx_) ** 2 + (py - cy_) ** 2)
             min_dist = min(min_dist, d)
+<<<<<<< Updated upstream
         ctes.append(min_dist)
     return ctes
 
@@ -296,3 +409,29 @@ print(f"\n{'='*55}")
 print(f"  FIXED    — Mean: {np.mean(fixed_arr):7.1f}  Median: {np.median(fixed_arr):7.1f}  95th: {np.percentile(fixed_arr, 95):7.1f}  Max: {np.max(fixed_arr):7.1f}")
 print(f"  ADAPTIVE — Mean: {np.mean(adaptive_arr):7.1f}  Median: {np.median(adaptive_arr):7.1f}  95th: {np.percentile(adaptive_arr, 95):7.1f}  Max: {np.max(adaptive_arr):7.1f}")
 print(f"{'='*55}")
+=======
+        cte_run.append(min_dist)
+    all_cte.extend(cte_run)
+
+all_cte = np.array(all_cte)
+ax2.hist(all_cte, bins=60, color="steelblue", edgecolor="white", alpha=0.8)
+ax2.axvline(np.median(all_cte), color="red", linestyle="--", label=f"Median: {np.median(all_cte):.1f} cm")
+ax2.axvline(np.percentile(all_cte, 95), color="orange", linestyle="--", label=f"95th pctl: {np.percentile(all_cte, 95):.1f} cm")
+ax2.set_xlabel("Cross-Track Error (cm)")
+ax2.set_ylabel("Count")
+ax2.set_title(f"Cross-Track Error Distribution\n({NUM_RUNS} additional runs, {len(all_cte)} samples)")
+ax2.legend()
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+out_path = "sim_results.png"
+plt.savefig(out_path, dpi=150)
+print(f"Plot saved to {out_path}")
+
+print(f"\nCross-Track Error Stats ({NUM_RUNS} runs):")
+print(f"  Mean:   {np.mean(all_cte):.1f} cm")
+print(f"  Median: {np.median(all_cte):.1f} cm")
+print(f"  Std:    {np.std(all_cte):.1f} cm")
+print(f"  95th:   {np.percentile(all_cte, 95):.1f} cm")
+print(f"  Max:    {np.max(all_cte):.1f} cm")
+>>>>>>> Stashed changes
