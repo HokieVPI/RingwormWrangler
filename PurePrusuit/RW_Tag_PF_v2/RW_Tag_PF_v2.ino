@@ -51,7 +51,7 @@ bool anchor1_received = false;
 bool anchor2_received = false;
 bool anchor3_received = false;
 //previous position state variable 
-double volatilecurrentX_global = 0.0f;// cm 
+double volatile currentX_global = 0.0f;// cm 
 double volatile currentY_global = 0.0f;// cm 
 bool prev_valid = false;
 
