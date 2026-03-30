@@ -739,3 +739,31 @@ hold off
 % legend("Robot Position")
 % % , "Actual Mat Position", "Mat Area")
 % hold off
+
+
+%% test 3_30_1
+
+
+data3_6= importdata("test_3_30_3");
+data3_6 = data3_6.data;
+robotx = [];
+roboty = [];
+i = 1;
+
+
+while i <= height(data3_6)-2
+    robotx = [robotx; data3_6(i,1)];
+    roboty = [roboty; data3_6(i+1,1)];
+    i = i+2;
+end
+
+figure
+hold on
+scatter(robotx,roboty)
+
+title("Reference Positioning Test #2")
+xlabel("x position (cm)")
+ylabel("y position (cm)")
+legend("Robot Position")
+hold off
+
