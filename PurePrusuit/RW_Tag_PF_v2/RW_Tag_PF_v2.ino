@@ -24,11 +24,11 @@
 // const float Anchor3_x=2087.88; // cm 
 // const float Anchor3_y=1264.92; // cm 
 const float Anchor1_x=0;// cm 
-const float Anchor1_y=0; // cm 
-const float Anchor2_x=719; // cm 
+const float Anchor1_y=617.22; // cm 
+const float Anchor2_x=1280.16; // cm 
 const float Anchor2_y=0; // cm 
-const float Anchor3_x=320; // cm 
-const float Anchor3_y=752; // cm 
+const float Anchor3_x=1708.41; // cm 
+const float Anchor3_y=1570.03; // cm 
 
 // Initialize Distance Variables
 int dist_1 = 0;
@@ -50,7 +50,7 @@ double global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 2.0f; // cm 
+const float MinMovement = 0.5f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
@@ -59,7 +59,7 @@ int tail_index = CIRCULAR_BUFFER_SIZE-1;
 volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
-static constexpr int waypoint_radius = 20; // cm
+static constexpr int waypoint_radius = 25; // cm
 static constexpr float look_ahead=75.0f; // cm 
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
@@ -68,9 +68,9 @@ float L_d; // Look-Ahead Distance in cm
 float L_d2; // Look-Ahead Distance squared 
 float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
-const float velocity = 25.0f;  // Constant Velocity in cm/s
+const float velocity = 50.0f;  // Constant Velocity in cm/s
 static constexpr int wheelRadius = 15;  //cm 
-static constexpr int trackWidth =43.18;  // Wheel to Wheel in cm 
+static constexpr int float trackWidth =43.18f;  // Wheel to Wheel in cm 
 float leftMotor; 
 float rightMotor; 
 
@@ -102,14 +102,13 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 6;
+static constexpr int PATH_LENGTH = 5;
 static Waypoint path[PATH_LENGTH] = {
-  {244, 122},
-  {244, 366},
-  {295, 446},
-  {382, 446},
-  {457, 366},
-  {457,122}
+  {631, 392},
+  {544, 549},
+  {499, 706},
+  {597, 862},
+  {740, 1019}
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
