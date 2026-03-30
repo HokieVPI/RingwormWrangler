@@ -1,7 +1,7 @@
 
 %% data3 postion test 1 
 
-data3_6= importdata("test_3_28_2");
+data3_6= importdata("test_3_29_2");
 data3_6 = data3_6.data;
 robotx = [];
 roboty = [];

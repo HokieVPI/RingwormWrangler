@@ -22,19 +22,19 @@ uint8_t nlos_2 = 0;
 uint8_t nlos_3 = 0;
 // Anchor Locations in Centimeters (x,y) z=0 
 
-const float Anchor1_x=0;// cm 
-const float Anchor1_y=1273.45; // cm  41.78 ft 
-const float Anchor2_x=1280.16; // cm  42.23ft 
-const float Anchor2_y=0; // cm 
-const float Anchor3_x=2090.01; // cm 
-const float Anchor3_y=1125.32; // cm 36.92 ft 
+// const float Anchor1_x=0;// cm 
+// const float Anchor1_y=1273.45; // cm  41.78 ft 
+// const float Anchor2_x=1280.16; // cm  42.23ft 
+// const float Anchor2_y=0; // cm 
+// const float Anchor3_x=2090.01; // cm 
+// const float Anchor3_y=1125.32; // cm 36.92 ft 
 //------- Replace with new anchor locations---------//
-// const float Anchor1_x=0.5;// cm 
-// const float Anchor1_y=1271.02; // cm 
-// const float Anchor2_x=1280.16; // cm 
-// const float Anchor2_y=0.5; // cm 
-// const float Anchor3_x=2133.60; // cm 
-// const float Anchor3_y=1158.24; // cm 
+const float Anchor1_x=0;// cm 
+const float Anchor1_y=617.22; // cm 
+const float Anchor2_x=1280.16; // cm 
+const float Anchor2_y=0; // cm 
+const float Anchor3_x=1708.41; // cm 
+const float Anchor3_y=1570.03; // cm 
 //--------------------------------------------------//
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=0; // cm 
@@ -156,17 +156,17 @@ void rangingHandler(UWBRangingData &rangingData) {
   float y = (A * F - C * D) / det;
 
   // One line per fix for readmatrix: x y nlos1 nlos2 nlos3 NoSight(0/1)
-  Serial.print(x, 4);
-  Serial.print(' ');
-  Serial.print(y, 4);
-  Serial.print(' ');
-  Serial.print((int)nlos_1);
-  Serial.print(' ');
-  Serial.print((int)nlos_2);
-  Serial.print(' ');
-  Serial.print((int)nlos_3);
-  Serial.print(' ');
-  Serial.println(NoSight ? 1 : 0);
+  Serial.println(x);
+  // Serial.print(' ');
+  Serial.println(y);
+  // Serial.print(' ');
+  // Serial.print((int)nlos_1);
+  // Serial.print(' ');
+  // Serial.print((int)nlos_2);
+  // Serial.print(' ');
+  // Serial.print((int)nlos_3);
+  // Serial.print(' ');
+  // Serial.println(NoSight ? 1 : 0);
 
   inRangingHandler = false;
 }
