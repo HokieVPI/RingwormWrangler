@@ -424,6 +424,5 @@ xlabel("x position (cm)")
 ylabel("y position (cm)")
 legend("Robot Position", "Waypoints", "Goal Points")
 axis equal
-grid on 
 hold off
 
