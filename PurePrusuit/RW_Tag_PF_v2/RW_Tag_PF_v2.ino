@@ -73,10 +73,8 @@ int tail_index = CIRCULAR_BUFFER_SIZE-1;
 volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
-static constexpr int waypoint_radius = 50; // cm
-static constexpr float look_ahead=200.0f; // cm (max lookahead)
-static constexpr float MIN_LOOKAHEAD = 80.0f; // cm (min lookahead on sharp turns)
-float adaptiveLookahead = look_ahead;
+static constexpr int waypoint_radius = 25; // cm
+static constexpr float look_ahead=200.0f; // cm
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
@@ -119,11 +117,12 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 5;
+static constexpr int PATH_LENGTH = 2;
 static Waypoint path[PATH_LENGTH] = {
-  {631,392},
-  {544,549},{499,706},
-  {597,862},{740,1019}
+  {631,392},{740,1019}
+  //   {631,392},
+  // {544,549},{499,706},
+  // {597,862},{740,1019}
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
@@ -177,7 +176,7 @@ void AdvancePathSegment(){
 GoalResult findLookaheadGoal() {
   GoalResult result;
   result.found = false;
-  float Lsq = adaptiveLookahead * adaptiveLookahead;
+  float Lsq = look_ahead * look_ahead;
 
   for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
     float dsx = path[seg + 1].wp_x - path[seg].wp_x;
@@ -310,8 +309,8 @@ if (!anchor1_received || !anchor2_received || !anchor3_received) {
 
   float x = (C*E - F*B) / det;
   float y = (A*F - C*D) / det;
-Serial.println(x);
-Serial.println(y);
+// Serial.println(x);
+// Serial.println(y);
   if(!prev_valid) {
     for(int i = 0; i < CIRCULAR_BUFFER_SIZE; i++) {
       x_circular_buffer[i] = x;
@@ -513,15 +512,12 @@ delay(10);
   float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
   float absAlpha = fabsf(alpha);
-  float speedScale = 1.0f;
+  float speedScale = 2.0f;
   if (absAlpha > PI / 4.0f) {
     speedScale = (PI - absAlpha) / PI;
     if (speedScale < MIN_SPEED_SCALE) speedScale = MIN_SPEED_SCALE;
   }
   float cmdVelocity = velocity * speedScale;
-
-  adaptiveLookahead = look_ahead * speedScale;
-  if (adaptiveLookahead < MIN_LOOKAHEAD) adaptiveLookahead = MIN_LOOKAHEAD;
 
   if (L_d < 1.0f) {
     K = 0.0f;
