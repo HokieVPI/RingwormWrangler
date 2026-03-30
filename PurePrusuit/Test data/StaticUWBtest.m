@@ -18,7 +18,11 @@ hold on
 scatter(robotx,roboty)
 xlim([0, 2133.6])
 ylim([0, 2641])
+<<<<<<< Updated upstream
 scatter(797.05,706.69,'magenta',"filled") % refrence point 
+=======
+scatter(631,392,'magenta',"filled") % refrence point 
+>>>>>>> Stashed changes
 mapArea = [0 0;
     70*2.54*12 0;
     70*2.54*12 32.4*2.54*12;
