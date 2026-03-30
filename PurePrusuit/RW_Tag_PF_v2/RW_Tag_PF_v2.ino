@@ -349,8 +349,29 @@ float prevY=0.0f;
     prevY += weights[i]*y_circular_buffer[index];
     index++;
   }
+
+
+  // only validates points when within 200cm of previous points
+  float threshhold = 200; // cm
+
+  // Checks validity of points
+  if (currentX = 0) {
     currentX_global = currentX;
-    currentY_global = currentY; 
+  } else if (abs(currentX_global-currentX) > threshhold) {
+    currentX_global = currentX_global;
+  } else {
+    currentX_global = currentX;
+  }
+
+  if (currentY = 0) {
+    currentY_global = currentY;
+  } else if (abs(currentY_global-currentY) > threshhold) {
+    currentY_global = currentY_global;
+  } else {
+    currentY_global = currentY;
+  }
+
+  
   // Serial.print("( ");
   // Serial.println(currentX_global);
   // Serial.print(" , ");
