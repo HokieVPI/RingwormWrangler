@@ -29,19 +29,19 @@ uint8_t nlos_3 = 0;
 // const float Anchor3_x=2090.01; // cm 
 // const float Anchor3_y=1125.32; // cm 36.92 ft 
 //------- Replace with new anchor locations---------//
-const float Anchor1_x=0;// cm 
-const float Anchor1_y=617.22; // cm 
-const float Anchor2_x=1280.16; // cm 
-const float Anchor2_y=0; // cm 
-const float Anchor3_x=1708.41; // cm 
-const float Anchor3_y=1570.03; // cm 
-//--------------------------------------------------//
 // const float Anchor1_x=0;// cm 
-// const float Anchor1_y=0; // cm 
-// const float Anchor2_x=719; // cm 
+// const float Anchor1_y=617.22; // cm 
+// const float Anchor2_x=1280.16; // cm 
 // const float Anchor2_y=0; // cm 
-// const float Anchor3_x=320; // cm 
-// const float Anchor3_y=752; // cm 
+// const float Anchor3_x=1708.41; // cm 
+// const float Anchor3_y=1570.03; // cm 
+//--------------------------------------------------//
+const float Anchor1_x=0;// cm 
+const float Anchor1_y=0; // cm 
+const float Anchor2_x=719; // cm 
+const float Anchor2_y=0; // cm 
+const float Anchor3_x=320; // cm 
+const float Anchor3_y=752; // cm 
 
 // Initialize Distance Variables
 int dist_1 = 0;
