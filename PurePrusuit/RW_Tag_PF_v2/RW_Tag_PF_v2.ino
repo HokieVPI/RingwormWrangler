@@ -21,19 +21,19 @@ float insight_A2;
 float insight_A3;
 // Anchor Locations in Centimeters (x,y) z=0 
 
-const float Anchor1_x=0;// cm 
-const float Anchor1_y=1273.45; // cm  41.78 ft 
-const float Anchor2_x=1280.16; // cm  42.23ft 
-const float Anchor2_y=0; // cm 
-const float Anchor3_x=2090.01; // cm 
-const float Anchor3_y=1125.32; // cm 36.92 ft 
+// const float Anchor1_x=0;// cm 
+// const float Anchor1_y=1273.45; // cm  41.78 ft 
+// const float Anchor2_x=1280.16; // cm  42.23ft 
+// const float Anchor2_y=0; // cm 
+// const float Anchor3_x=2090.01; // cm 
+// const float Anchor3_y=1125.32; // cm 36.92 ft 
 
-// const float Anchor1_x=0.5;// cm 
-// const float Anchor1_y=1271.02; // cm 
-// const float Anchor2_x=1280.16; // cm 
-// const float Anchor2_y=0.5; // cm 
-// const float Anchor3_x=2133.60; // cm 
-// const float Anchor3_y=1158.24; // cm 
+const float Anchor1_x=0;// cm 
+const float Anchor1_y=617.22; // cm 
+const float Anchor2_x=1280.16; // cm 
+const float Anchor2_y=0; // cm 
+const float Anchor3_x=1708.41; // cm 
+const float Anchor3_y=1570.03; // cm 
 
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=0; // cm 
@@ -65,7 +65,7 @@ static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
 const float MinMovement = 0.5f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 static int staleCount = 0;
-const int MAX_STALE = 5;
+const int MAX_STALE = 10;
 float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
 int head_index = 0;
@@ -119,11 +119,11 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 4;
+static constexpr int PATH_LENGTH = 5;
 static Waypoint path[PATH_LENGTH] = {
-  {890,308},
-  {890,1097},{1200,1097},
-  {1200,308}
+  {631,392},
+  {544,549},{499,706},
+  {597,862},{740,1019}
 };
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
@@ -393,7 +393,7 @@ float prevY=0.0f;
     global_azimuth = Azimuth;
     staleCount = 0;
   }else{
-    // Serial.print("Azimuth invalid  ");
+    // Serial.print("min move  ");
     staleCount++;
     if(staleCount >= MAX_STALE) {
       float minDrive = 0.5f * velocity / wheelRadius;
@@ -497,15 +497,15 @@ delay(10);
 
   float angleToGoal = atan2f(delta_y, delta_x);
   // Serial.print("Goal xy: ");
-  // Serial.println(goal.gx);
-  // Serial.println(goal.gy);
+  Serial.println(goal.gx);
+  Serial.println(goal.gy);
   float DesiredHeading = radiansToDegrees(angleToGoal);
   // Serial.print("Desired Heading: ");
   Serial.println(DesiredHeading);
   float azimuth_deg = radiansToDegrees(global_azimuth);
   Serial.println(azimuth_deg);
-  // Serial.println(currentX_global);
-  // Serial.println(currentY_global);
+  Serial.println(currentX_global);
+  Serial.println(currentY_global);
 
   L_d2 = delta_x * delta_x + delta_y * delta_y;
   L_d = sqrtf(L_d2);
