@@ -387,7 +387,7 @@ waypoints3_29_1 = [631 329;
               597 862;
               740 1019];
 
-raw = importdata("test_3_30_1");
+raw = importdata("test_3_31_3");
 raw = raw.data;
 
 goalX = []; goalY = [];
@@ -417,7 +417,7 @@ scatter(waypoints3_29_1(:,1), waypoints3_29_1(:,2), 100, 'm', 'filled')
 scatter(goalX, goalY, 25, 'g', 'filled')
 for k = 1:length(desiredHeading)
     plot([currentX(k), currentX(k)+4*cos(desiredHeading(k)*(pi/180))], ...
-         [currentY(k), currentY(k)+4*sin(desiredHeading(k)*(pi/180))])
+         [currentY(k), currentY(k)+4*sin(desiredHeading(k)*(pi/180))],'LineWidth',1)
 end
 title("Pure Pursuit X-Y Position - Test 3_29_1")
 xlabel("x position (cm)")

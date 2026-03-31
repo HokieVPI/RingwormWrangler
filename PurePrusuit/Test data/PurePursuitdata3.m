@@ -387,7 +387,7 @@ waypoints3_29_1 = [631 329;
               597 862;
               740 1019];
 
-raw = importdata("test_3_31_1");
+raw = importdata("test_3_31_3");
 raw = raw.data;
 
 goalX = []; goalY = [];

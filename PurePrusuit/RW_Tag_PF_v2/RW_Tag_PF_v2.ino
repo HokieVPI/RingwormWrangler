@@ -117,9 +117,10 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 4;
+//  {950,400},{950,800},{1300,800},{1300,500}
+static constexpr int PATH_LENGTH = 8;
 static Waypoint path[PATH_LENGTH] = {
-  {950,400},{950,800},{1300,800},{1300,500}};
+  {1300,500},{1300,800},{950,800},{950,400},{550,400},{550,800},{200,800},{200,400}};
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
