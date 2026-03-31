@@ -7,12 +7,12 @@
 //   'r' or 'R'  -> retract for 1 second
 //   's' or 'S'  -> stop immediately
 
-const int IN1_PIN = 1;   // Connected to MP6550 IN1
+const int IN1_PIN = 3;   // Connected to MP6550 IN1
 const int IN2_PIN = 2;   // Connected to MP6550 IN2
 
 // Duration (ms) to run the actuator per command
-const unsigned long RUN_DURATION_MS = 1000;
-
+const unsigned long RUN_DURATION_MS = 2900;
+// 2.9 sec
 void stopActuator() {
   // Brake / coast: both LOW (check datasheet; LOW/LOW is usually brake)
   digitalWrite(IN1_PIN, LOW);
@@ -59,7 +59,7 @@ void setup() {
 
   stopActuator();
 
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) {
     // Wait for USB serial on Portenta
   }
