@@ -22,12 +22,14 @@ uint8_t nlos_2 = 0;
 uint8_t nlos_3 = 0;
 // Anchor Locations in Centimeters (x,y) z=0 
 
+// WRESTLING ROOM LOCATIONS
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=1273.45; // cm  41.78 ft 
 // const float Anchor2_x=1280.16; // cm  42.23ft 
 // const float Anchor2_y=0; // cm 
 // const float Anchor3_x=2090.01; // cm 
 // const float Anchor3_y=1125.32; // cm 36.92 ft 
+
 //------- Replace with new anchor locations---------//
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=617.22; // cm 
