@@ -387,7 +387,7 @@ waypoints3_29_1 = [631 329;
               597 862;
               740 1019];
 
-raw = importdata("test_3_29_1");
+raw = importdata("test_3_30_1");
 raw = raw.data;
 
 goalX = []; goalY = [];
@@ -424,5 +424,6 @@ xlabel("x position (cm)")
 ylabel("y position (cm)")
 legend("Robot Position", "Waypoints", "Goal Points")
 axis equal
+grid on 
 hold off
 

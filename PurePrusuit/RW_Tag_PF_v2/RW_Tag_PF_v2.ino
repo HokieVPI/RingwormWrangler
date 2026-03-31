@@ -21,19 +21,19 @@ float insight_A2;
 float insight_A3;
 // Anchor Locations in Centimeters (x,y) z=0 
 
-// const float Anchor1_x=0;// cm 
-// const float Anchor1_y=1273.45; // cm  41.78 ft 
-// const float Anchor2_x=1280.16; // cm  42.23ft 
-// const float Anchor2_y=0; // cm 
-// const float Anchor3_x=2090.01; // cm 
-// const float Anchor3_y=1125.32; // cm 36.92 ft 
-
 const float Anchor1_x=0;// cm 
-const float Anchor1_y=617.22; // cm 
-const float Anchor2_x=1280.16; // cm 
+const float Anchor1_y=1273.45; // cm  41.78 ft 
+const float Anchor2_x=1280.16; // cm  42.23ft 
 const float Anchor2_y=0; // cm 
-const float Anchor3_x=1708.41; // cm 
-const float Anchor3_y=1570.03; // cm 
+const float Anchor3_x=2090.01; // cm 
+const float Anchor3_y=1125.32; // cm 36.92 ft 
+
+// const float Anchor1_x=0;// cm 
+// const float Anchor1_y=617.22; // cm 
+// const float Anchor2_x=1280.16; // cm 
+// const float Anchor2_y=0; // cm 
+// const float Anchor3_x=1708.41; // cm 
+// const float Anchor3_y=1570.03; // cm 
 
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=0; // cm 
@@ -62,7 +62,7 @@ double volatile global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 0.5f; // cm 
+const float MinMovement = 0.1f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 static int staleCount = 0;
 const int MAX_STALE = 10;
@@ -73,7 +73,7 @@ int tail_index = CIRCULAR_BUFFER_SIZE-1;
 volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
-static constexpr int waypoint_radius = 25; // cm
+static constexpr int waypoint_radius = 100; // cm
 static constexpr float look_ahead=200.0f; // cm
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
@@ -83,7 +83,7 @@ float L_d; // Look-Ahead Distance in cm
 float L_d2; // Look-Ahead Distance squared 
 float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
-const float velocity = 50.0f;  // Constant Velocity in cm/s
+const float velocity = 100.0f;  // Constant Velocity in cm/s
 static constexpr float wheelRadius = 15.24;  //cm 
 static constexpr float trackWidth =43.18;  // Wheel to Wheel in cm 
 float leftMotor; 
@@ -117,13 +117,9 @@ struct GoalResult {
   bool  found;   // true if circle intersected the path
 };
 //  establish path length and waypoints
-static constexpr int PATH_LENGTH = 2;
+static constexpr int PATH_LENGTH = 4;
 static Waypoint path[PATH_LENGTH] = {
-  {631,392},{740,1019}
-  //   {631,392},
-  // {544,549},{499,706},
-  // {597,862},{740,1019}
-};
+  {950,400},{950,800},{1300,800},{1300,500}};
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
@@ -512,12 +508,12 @@ delay(10);
   float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
   float absAlpha = fabsf(alpha);
-  float speedScale = 2.0f;
-  if (absAlpha > PI / 4.0f) {
-    speedScale = (PI - absAlpha) / PI;
-    if (speedScale < MIN_SPEED_SCALE) speedScale = MIN_SPEED_SCALE;
-  }
-  float cmdVelocity = velocity * speedScale;
+  // float speedScale = 0.5f;
+  // if (absAlpha > PI / 4.0f) {
+  //   speedScale = (PI - absAlpha) / PI;
+  //   if (speedScale < MIN_SPEED_SCALE) speedScale = MIN_SPEED_SCALE;
+  // }
+   float cmdVelocity = velocity;
 
   if (L_d < 1.0f) {
     K = 0.0f;
