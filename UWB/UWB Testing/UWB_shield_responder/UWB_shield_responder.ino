@@ -36,7 +36,7 @@ void rangingHandler(UWBRangingData &rangingData) {
   if (rangingData.measureType() == (uint8_t)uwb::MeasurementType::TWO_WAY) {
     // Get the TWR (Two-Way Ranging) measurements
     RangingMeasures twr = rangingData.twoWayRangingMeasure();
-
+Serial.print("in ranging Handler");
     // Loop through all available measurements
     for (int j = 0; j < rangingData.available(); j++) {
       // Only process valid measurements
@@ -60,12 +60,10 @@ void rangingHandler(UWBRangingData &rangingData) {
 
         // Output formatted data for Serial Plotter
         // Serial.print("Distance(cm):");
-        // Serial.print(twr[j].distance);
+        Serial.print(twr[j].distance);
         // Serial.print(",");
         // Serial.print("Average (cm):");
-         unsigned long TimeStamp = millis();
-        Serial.println(avg);
-        Serial.println(TimeStamp)
+        // Serial.println(avg);
        
 
         // Update circular buffer index
@@ -92,10 +90,10 @@ void setup() {
   // Serial.println("- Portenta UWB Shield - Two-Way Ranging Controlee started...");
 
   // Define MAC addresses for this device and the target
-  // This device (Controlee) has address 0x1111
-  // Target device (Controller) has address 0x2222
-  uint8_t devAddr[] = {0x1111, 0x1111};
-  uint8_t destination[] = {0x2222, 0x2222};
+  // This device (Controlee) has address 0x11
+  // Target device (Controller) has address 0x22
+  uint8_t devAddr[] = {0x22, 0x22};
+  uint8_t destination[] = {0x11, 0x11};
   UWBMacAddress srcAddr(UWBMacAddress::Size::SHORT, devAddr);
   UWBMacAddress dstAddr(UWBMacAddress::Size::SHORT, destination);
 
@@ -103,7 +101,7 @@ void setup() {
   UWB.registerRangingCallback(rangingHandler);
   UWB.begin();
   
-  // Serial.println("- Starting UWB...");
+  Serial.println("- Starting UWB...");
   
   // Wait until UWB stack is initialized
   while (UWB.state() != 0) {
@@ -111,14 +109,14 @@ void setup() {
   }
 
   // Setup and start the UWB session using simplified UWBRangingControlee
-  // Serial.println("- Starting session...");
+  Serial.println("- Starting session...");
   UWBRangingControlee myControlee(0x11223344, srcAddr, dstAddr);
   UWBSessionManager.addSession(myControlee);
   myControlee.init();
   myControlee.start();
 
   // Signal initialization complete
-  // Serial.println("- Initialization complete!");
+  Serial.println("- Initialization complete!");
   
   #if defined(ARDUINO_PORTENTA_C33)
     digitalWrite(LEDR, HIGH);  // Red OFF when initialized
@@ -143,7 +141,7 @@ void loop() {
     // For boards without RGB LED, print heartbeat
     if (currentTime - lastLedBlink >= LED_BLINK_INTERVAL) {
       lastLedBlink = currentTime;
-      // Serial.println("- System running...");
+      Serial.println("- System running...");
     }
   #endif
 
