@@ -28,7 +28,7 @@ const float Anchor2_y=0; // cm
 const float Anchor3_x=2090.01; // cm 
 const float Anchor3_y=1125.32; // cm 36.92 ft 
 const float Anchor4_x=819.91; // cm  
-const float Anchor4_y=1273.45+1380.74; // cm 
+const float Anchor4_y=2654.19; // cm 
 
 static constexpr int NUM_ANCHORS = 4;
 const float anchorX[NUM_ANCHORS] = {Anchor1_x, Anchor2_x, Anchor3_x, Anchor4_x};
@@ -184,6 +184,44 @@ void AdvancePathSegment(){
 // Uses: currentX_global, currentY_global, look_ahead, path[], pathSegIdx, PATH_LENGTH
 GoalResult findLookaheadGoal() {
   GoalResult result;
+    result.found = false;
+  float Lsq = look_ahead * look_ahead;
+
+  for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
+    float dsx = path[seg + 1].wp_x - path[seg].wp_x;
+    float dsy = path[seg + 1].wp_y - path[seg].wp_y;
+
+    float fx = path[seg].wp_x - (float)currentX_global;
+    float fy = path[seg].wp_y - (float)currentY_global;
+
+    float qa = dsx * dsx + dsy * dsy;
+    float qb = 2.0f * (fx * dsx + fy * dsy);
+    float qc = (fx * fx + fy * fy) - Lsq;
+
+    float discriminant = qb * qb - 4.0f * qa * qc;
+
+    if (discriminant < 0.0f) continue;
+
+    float sqrtDisc = sqrtf(discriminant);
+
+    float t1 = (-qb - sqrtDisc) / (2.0f * qa);
+    float t2 = (-qb + sqrtDisc) / (2.0f * qa);
+
+    float bestT = -1.0f;
+    if (t2 >= 0.0f && t2 <= 1.0f) {
+      bestT = t2;
+    } else if (t1 >= 0.0f && t1 <= 1.0f) {
+      bestT = t1;
+    }
+
+    if (bestT >= 0.0f) {
+      result.gx = path[seg].wp_x + bestT * dsx;
+      result.gy = path[seg].wp_y + bestT * dsy;
+      result.found = true;
+      return result;
+    }
+  }
+
   int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
   result.gx = path[nextWp].wp_x;
   result.gy = path[nextWp].wp_y;
