@@ -84,7 +84,7 @@ volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
 static constexpr int waypoint_radius = 100; // cm
-static constexpr float look_ahead=200.0f; // cm
+static constexpr float look_ahead=150.0f; // cm
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
