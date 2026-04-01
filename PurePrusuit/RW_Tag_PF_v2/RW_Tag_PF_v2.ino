@@ -82,6 +82,8 @@ int head_index = 0;
 int tail_index = CIRCULAR_BUFFER_SIZE-1;
 volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
+float tRobot = 0.0f;
+float tMin = tRobot+0.2f;
 // waypoint constant
 static constexpr int waypoint_radius = 100; // cm
 static constexpr float look_ahead=200.0f; // cm
@@ -208,12 +210,13 @@ GoalResult findLookaheadGoal() {
     float t1 = (-qb - sqrtDisc) / (2.0f * qa);
     float t2 = (-qb + sqrtDisc) / (2.0f * qa);
 
-    float tMin = 0.0f;
-    if (seg == pathSegIdx && qa > 1e-6f) {
+   
+    if ({seg == pathSegIdx || seg == pathSegIdx + 1} && qa > 1e-6f) { // check if the segment is the current or next segment
       float robX = (float)currentX_global - path[seg].wp_x;
       float robY = (float)currentY_global - path[seg].wp_y;
       float tRobot = (robX * dsx + robY * dsy) / qa;
-      if (tRobot > 0.0f) tMin = tRobot;
+      if (tRobot > 0.0f) {
+      tMin = tRobot;
     }
 
     float bestT = -1.0f;
@@ -546,9 +549,9 @@ delay(10);
   }
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
-  if (PathComplete()) {
+  if (PathComplete()) { // if the path is complete, stop the robot
     driveMotors(0, 0);
-    Serial.println("Path Complete");
+    Serial.println("Path Complete"); 
     inRangingHandler = false;
     return;
   }
