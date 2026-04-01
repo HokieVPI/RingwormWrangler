@@ -86,6 +86,7 @@ float tRobot = 0.0f;
 float tMin = tRobot+0.2f;
 // waypoint constant
 static constexpr int waypoint_radius = 100; // cm
+static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
 static constexpr float look_ahead=200.0f; // cm
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
@@ -172,7 +173,8 @@ void AdvancePathSegment(){
     float deltaY=getWaypointY(nextWaypoint)-currentY_global;
     float distanceToNextWaypoint_sq=deltaX*deltaX+deltaY*deltaY;
 
-    if (distanceToNextWaypoint_sq <= waypoint_radius * waypoint_radius){
+    int r = (nextWaypoint == PATH_LENGTH - 1) ? final_waypoint_radius : waypoint_radius;
+    if (distanceToNextWaypoint_sq <= (float)r * (float)r){
       advancePathSegment();
     }
     // could add in something to handle overshoot of waypoint radius
@@ -210,19 +212,18 @@ GoalResult findLookaheadGoal() {
     float t1 = (-qb - sqrtDisc) / (2.0f * qa);
     float t2 = (-qb + sqrtDisc) / (2.0f * qa);
 
-   
-    if ({seg == pathSegIdx || seg == pathSegIdx + 1} && qa > 1e-6f) { // check if the segment is the current or next segment
+    float tMinLocal = 0.0f;
+    if ((seg == pathSegIdx || seg == pathSegIdx + 1) && qa > 1e-6f) {
       float robX = (float)currentX_global - path[seg].wp_x;
       float robY = (float)currentY_global - path[seg].wp_y;
-      float tRobot = (robX * dsx + robY * dsy) / qa;
-      if (tRobot > 0.0f) {
-      tMin = tRobot;
+      float tRobotLocal = (robX * dsx + robY * dsy) / qa;
+      if (tRobotLocal > 0.0f) tMinLocal = tRobotLocal;
     }
 
     float bestT = -1.0f;
-    if (t2 >= tMin && t2 <= 1.0f) {
+    if (t2 >= tMinLocal && t2 <= 1.0f) {
       bestT = t2;
-    } else if (t1 >= tMin && t1 <= 1.0f) {
+    } else if (t1 >= tMinLocal && t1 <= 1.0f) {
       bestT = t1;
     }
 
