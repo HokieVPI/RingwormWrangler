@@ -1,6 +1,5 @@
 #include <PortentaUWBShield.h>
 #include <math.h>
-
 #include <Basicmicro.h>
 
 #ifndef PI
@@ -19,6 +18,7 @@
 float insight_A1;
 float insight_A2;
 float insight_A3;
+float insight_A4;
 // Anchor Locations in Centimeters (x,y) z=0 
 
 const float Anchor1_x=0;// cm 
@@ -27,6 +27,12 @@ const float Anchor2_x=1280.16; // cm  42.23ft
 const float Anchor2_y=0; // cm 
 const float Anchor3_x=2090.01; // cm 
 const float Anchor3_y=1125.32; // cm 36.92 ft 
+const float Anchor4_x=0; // cm  TODO: set to actual anchor 4 position
+const float Anchor4_y=0; // cm  TODO: set to actual anchor 4 position
+
+static constexpr int NUM_ANCHORS = 4;
+const float anchorX[NUM_ANCHORS] = {Anchor1_x, Anchor2_x, Anchor3_x, Anchor4_x};
+const float anchorY[NUM_ANCHORS] = {Anchor1_y, Anchor2_y, Anchor3_y, Anchor4_y};
 
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=617.22; // cm 
@@ -46,10 +52,14 @@ const float Anchor3_y=1125.32; // cm 36.92 ft
 int dist_1 = 0;
 int dist_2 = 0;
 int dist_3 = 0; 
+int dist_4 = 0;
+int anchorDist[NUM_ANCHORS] = {0, 0, 0, 0};
 // Anchor received state variables
 bool anchor1_received = false;
 bool anchor2_received = false;
 bool anchor3_received = false;
+bool anchor4_received = false;
+bool anchorOk[NUM_ANCHORS] = {false, false, false, false};
 //previous position state variable 
 double volatile currentX_global = 0.0f;// cm 
 double volatile currentY_global = 0.0f;// cm 
@@ -84,8 +94,8 @@ float L_d2; // Look-Ahead Distance squared
 float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
 const float velocity = 100.0f;  // Constant Velocity in cm/s
-static constexpr float wheelRadius = 15.24;  //cm 
-static constexpr float trackWidth =43.18;  // Wheel to Wheel in cm 
+static constexpr float wheelRadius = 15.24f;  //cm 
+static constexpr float trackWidth =43.18f;  // Wheel to Wheel in cm 
 float leftMotor; 
 float rightMotor; 
 
@@ -120,12 +130,13 @@ struct GoalResult {
 //  {950,400},{950,800},{1300,800},{1300,500}
 static constexpr int PATH_LENGTH = 41;
 static Waypoint path[PATH_LENGTH] = {
-  {200, 502.4},{200, 852.4},{200, 1202.4},{200, 1552.4},{200, 1902.4},{200, 2252.4},
-  {442.5, 2252.4},{442.5, 1902.4},{442.5, 1552.4},{442.5, 1202.4},{442.5, 852.4},{442.5, 502.4}, {442.5, 152.4},
   {792.5, 152.4},{792.5, 502.4},{792.5, 852.4},{792.5, 1202.4},{792.5, 1552.4},{792.5, 1902.4},{792.5, 2252.4},
-  {1142.5, 2252.4},{1142.5, 1902.4},{1142.5, 1552.4},{1142.5, 1202.4},{1142.5, 852.4},{1142.5, 502.4}, {1142.5, 152.4},
-  {1492.5, 152.4},{1492.5, 502.4},{1492.5, 852.4},{1492.5, 1202.4},{1492.5, 1552.4},{1492.5, 1902.4},{1492.5, 2252.4}};
+  {1142.5, 2252.4},{1142.5, 1902.4},{1142.5, 1552.4},{1142.5, 1202.4},{1142.5, 852.4},{1142.5, 502.4}, {1142.5, 152.4}};
   // {1300,500},{1300,800},{950,800},{950,400},{550,400},{550,800},{200,800},{200,400}};
+=======
+  {1300,500},{1300,800},{950,800},{950,400},
+  {550,400},{550,800},{200,800},{200,400}};
+>>>>>>> Stashed changes
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
@@ -177,45 +188,6 @@ void AdvancePathSegment(){
 // Uses: currentX_global, currentY_global, look_ahead, path[], pathSegIdx, PATH_LENGTH
 GoalResult findLookaheadGoal() {
   GoalResult result;
-  result.found = false;
-  float Lsq = look_ahead * look_ahead;
-
-  for (int seg = pathSegIdx; seg < PATH_LENGTH - 1; seg++) {
-    float dsx = path[seg + 1].wp_x - path[seg].wp_x;
-    float dsy = path[seg + 1].wp_y - path[seg].wp_y;
-
-    float fx = path[seg].wp_x - (float)currentX_global;
-    float fy = path[seg].wp_y - (float)currentY_global;
-
-    float qa = dsx * dsx + dsy * dsy;
-    float qb = 2.0f * (fx * dsx + fy * dsy);
-    float qc = (fx * fx + fy * fy) - Lsq;
-
-    float discriminant = qb * qb - 4.0f * qa * qc;
-
-    if (discriminant < 0.0f) continue;
-
-    float sqrtDisc = sqrtf(discriminant);
-
-    float t1 = (-qb - sqrtDisc) / (2.0f * qa);
-    float t2 = (-qb + sqrtDisc) / (2.0f * qa);
-
-    float bestT = -1.0f;
-    if (t2 >= 0.0f && t2 <= 1.0f) {
-      bestT = t2;
-    } else if (t1 >= 0.0f && t1 <= 1.0f) {
-      bestT = t1;
-    }
-
-    if (bestT >= 0.0f) {
-      result.gx = path[seg].wp_x + bestT * dsx;
-      result.gy = path[seg].wp_y + bestT * dsy;
-      result.found = true;
-      return result;
-    }
-  }
-
-  // Fallback: no intersection found, aim at next waypoint directly
   int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
   result.gx = path[nextWp].wp_x;
   result.gy = path[nextWp].wp_y;
@@ -245,6 +217,38 @@ void driveMotors(float leftRadPerSec, float rightRadPerSec) {
                                motor_accel, (uint32_t)rightCounts,
                                motor_accel, (uint32_t)leftCounts);
 }
+
+// Trilateration using Cramer's rule on any 3 anchors (indices into anchorX/Y arrays).
+// Returns true on success, writes result into *outX, *outY.
+bool trilaterate(int i0, int i1, int i2,
+                 const int dist[], float *outX, float *outY) {
+  float A = 2.0f*(anchorX[i1] - anchorX[i0]);
+  float B = 2.0f*(anchorY[i1] - anchorY[i0]);
+  float C = (float)dist[i0]*dist[i0] - (float)dist[i1]*dist[i1]
+          - anchorX[i0]*anchorX[i0] + anchorX[i1]*anchorX[i1]
+          - anchorY[i0]*anchorY[i0] + anchorY[i1]*anchorY[i1];
+  float D = 2.0f*(anchorX[i2] - anchorX[i1]);
+  float E = 2.0f*(anchorY[i2] - anchorY[i1]);
+  float F = (float)dist[i1]*dist[i1] - (float)dist[i2]*dist[i2]
+          - anchorX[i1]*anchorX[i1] + anchorX[i2]*anchorX[i2]
+          - anchorY[i1]*anchorY[i1] + anchorY[i2]*anchorY[i2];
+  float det = A*E - B*D;
+  if (fabsf(det) < 1e-6f) return false;
+  *outX = (C*E - F*B) / det;
+  *outY = (A*F - C*D) / det;
+  return true;
+}
+
+// Priority-ordered 3-anchor combinations (best geometry first).
+// Indices refer to anchorX/Y/anchorDist arrays: 0=A1, 1=A2, 2=A3, 3=A4.
+// Reorder these based on field testing to put the best-spread combo first.
+struct AnchorCombo { int a, b, c; };
+static const AnchorCombo combos[4] = {
+  {0, 1, 2},  // Anchors 1,2,3  (proven default)
+  {0, 2, 3},  // Anchors 1,3,4
+  {0, 1, 3},  // Anchors 1,2,4
+  {1, 2, 3},  // Anchors 2,3,4
+};
 
 // handler for ranging notifications
 void rangingHandler(UWBRangingData &rangingData) {
@@ -280,37 +284,52 @@ void rangingHandler(UWBRangingData &rangingData) {
       anchor3_received = true;
         //  Serial.println(insight_A3);
       // Serial.println(dist_3);
+    } else if (twr[j].peer_addr[0] == 0x55 && twr[j].peer_addr[1] == 0x55) {
+      dist_4 = twr[j].distance;
+      //  insight_A4=twr[j].nlos;
+      anchor4_received = true;
     }
   }
   
-if (!anchor1_received || !anchor2_received || !anchor3_received) {
-  // Serial.println("bad anchor connection");
-    inRangingHandler = false;
-  return;
-}else 
-{
-  // reseting bools
+  anchorOk[0] = anchor1_received;
+  anchorOk[1] = anchor2_received;
+  anchorOk[2] = anchor3_received;
+  anchorOk[3] = anchor4_received;
+  anchorDist[0] = dist_1;
+  anchorDist[1] = dist_2;
+  anchorDist[2] = dist_3;
+  anchorDist[3] = dist_4;
+
+  int nValid = anchor1_received + anchor2_received
+             + anchor3_received + anchor4_received;
+
   anchor1_received = false;
   anchor2_received = false;
   anchor3_received = false;
+  anchor4_received = false;
 
-  float A = 2.0f*Anchor2_x - 2.0f*Anchor1_x; 
-  float B = 2.0f*Anchor2_y - 2.0f*Anchor1_y; 
-  float C = dist_1*dist_1 - dist_2*dist_2 - Anchor1_x*Anchor1_x + Anchor2_x*Anchor2_x - Anchor1_y*Anchor1_y + Anchor2_y*Anchor2_y; 
-  float D = 2.0f*Anchor3_x - 2.0f*Anchor2_x;
-  float E = 2.0f*Anchor3_y - 2.0f*Anchor2_y; 
-  float F = dist_2*dist_2 - dist_3*dist_3 - Anchor2_x*Anchor2_x + Anchor3_x*Anchor3_x - Anchor2_y*Anchor2_y + Anchor3_y*Anchor3_y;
- 
-  float det = A*E - B*D;
-
-  if (fabsf(det) < 1e-6) {
-    Serial.println("Error: Anchors are collinear, cannot calculate position");
+  if (nValid < 3) {
     inRangingHandler = false;
     return;
   }
 
-  float x = (C*E - F*B) / det;
-  float y = (A*F - C*D) / det;
+  float x = 0.0f, y = 0.0f;
+  bool solved = false;
+  for (int c = 0; c < 4; c++) {
+    int ia = combos[c].a, ib = combos[c].b, ic = combos[c].c;
+    if (anchorOk[ia] && anchorOk[ib] && anchorOk[ic]) {
+      if (trilaterate(ia, ib, ic, anchorDist, &x, &y)) {
+        solved = true;
+        break;
+      }
+    }
+  }
+
+  if (!solved) {
+    inRangingHandler = false;
+    return;
+  }
+
 // Serial.println(x);
 // Serial.println(y);
   if(!prev_valid) {
@@ -406,7 +425,6 @@ float prevY=0.0f;
   newPosition = true;
 // ------------ End Heading Calculation ------------ //
 }
-}
 
   inRangingHandler = false;
 }
@@ -429,18 +447,19 @@ void setup() {
   uint8_t destination1[]={0x22,0x22};
   uint8_t destination2[]={0x33,0x33};
   uint8_t destination3[]={0x44,0x44};
-
+  uint8_t destination4[]={0x55,0x55};
 
   UWBMacAddress dstAddr1(UWBMacAddress::Size::SHORT,destination1);
   UWBMacAddress dstAddr2(UWBMacAddress::Size::SHORT,destination2);
   UWBMacAddress dstAddr3(UWBMacAddress::Size::SHORT,destination3);
-
+  UWBMacAddress dstAddr4(UWBMacAddress::Size::SHORT,destination4);
 
   // Create a list of destination addresses
   UWBMacAddressList dest(UWBMacAddress::Size::SHORT);
   dest.add(dstAddr1);
   dest.add(dstAddr2);
   dest.add(dstAddr3);
+  dest.add(dstAddr4);
  
 
   // register the ranging notification handler before starting
