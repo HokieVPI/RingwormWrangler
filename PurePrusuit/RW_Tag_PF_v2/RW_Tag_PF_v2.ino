@@ -27,8 +27,8 @@ const float Anchor2_x=1280.16; // cm  42.23ft
 const float Anchor2_y=0; // cm 
 const float Anchor3_x=2090.01; // cm 
 const float Anchor3_y=1125.32; // cm 36.92 ft 
-const float Anchor4_x=0; // cm  TODO: set to actual anchor 4 position
-const float Anchor4_y=0; // cm  TODO: set to actual anchor 4 position
+const float Anchor4_x=819.91; // cm  
+const float Anchor4_y=1273.45+1380.74; // cm 
 
 static constexpr int NUM_ANCHORS = 4;
 const float anchorX[NUM_ANCHORS] = {Anchor1_x, Anchor2_x, Anchor3_x, Anchor4_x};
