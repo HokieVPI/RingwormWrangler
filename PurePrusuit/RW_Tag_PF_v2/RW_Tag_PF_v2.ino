@@ -84,7 +84,7 @@ volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 // waypoint constant
 static constexpr int waypoint_radius = 100; // cm
-static constexpr float look_ahead=150.0f; // cm
+static constexpr float look_ahead=200.0f; // cm
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
@@ -107,7 +107,7 @@ UART controllerSerial(14, 13);
 
 static constexpr float ENCODER_CPR   = -24293.0f;
 static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
-uint32_t motor_accel = 25000;
+uint32_t motor_accel = 20000;
 
 Basicmicro controller(&controllerSerial, LIBRARY_READ_TIMEOUT);
 
@@ -128,13 +128,12 @@ struct GoalResult {
 };
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
-static constexpr int PATH_LENGTH = 34;
+static constexpr int PATH_LENGTH = 8;
 static Waypoint path[PATH_LENGTH] = {
-  {200, 502.4},{200, 852.4},{200, 1202.4},{200, 1552.4},{200, 1902.4},{200, 2252.4},
-  {442.5, 2252.4},{442.5, 1902.4},{442.5, 1552.4},{442.5, 1202.4},{442.5, 852.4},{442.5, 502.4}, {442.5, 152.4},
-  {792.5, 152.4},{792.5, 502.4},{792.5, 852.4},{792.5, 1202.4},{792.5, 1552.4},{792.5, 1902.4},{792.5, 2252.4},
-  {1142.5, 2252.4},{1142.5, 1902.4},{1142.5, 1552.4},{1142.5, 1202.4},{1142.5, 852.4},{1142.5, 502.4}, {1142.5, 152.4},
-  {1492.5, 152.4},{1492.5, 502.4},{1492.5, 852.4},{1492.5, 1202.4},{1492.5, 1552.4},{1492.5, 1902.4},{1492.5, 2252.4}};
+  {200, 502.4},{200, 2252.4},
+  {442.5, 2252.4}, {442.5, 200},
+  {792.5, 200},{792.5, 2252.4},
+  {1142.5, 2252.4}, {1142.5, 200}};
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
