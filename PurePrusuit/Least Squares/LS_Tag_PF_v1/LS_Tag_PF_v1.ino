@@ -7,6 +7,7 @@
 #endif
 
 // In line of sight 
+// is this still being used?
 // float insight_A1;
 // float insight_A2;
 // float insight_A3;
@@ -55,21 +56,21 @@ float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
 int head_index = 0;
 int tail_index = CIRCULAR_BUFFER_SIZE - 1;
 volatile bool inRangingHandler = false;
-
-// Pure pursuit variables & constants 
-static constexpr int waypoint_radius = 100;
-static constexpr float look_ahead = 200.0f;
-static constexpr float MIN_SPEED_SCALE = 0.2f;
+// Pure Pursuit Variables and Constants
+// waypoint constants 
+static constexpr int waypoint_radius = 100; // cm
+static constexpr float look_ahead=200.0f; // cm
+static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
-float delta_x;
-float delta_y;
-float L_d;
-float L_d2;
-float K;
-float omega;
-const float velocity = 100.0f;
-static constexpr float wheelRadius = 15.24f;
-static constexpr float trackWidth = 43.18f;
+float delta_x; // differnce in look-ahead distance from current position  
+float delta_y; // differnce in look-ahead distance from current position 
+float L_d; // Look-Ahead Distance in cm 
+float L_d2; // Look-Ahead Distance squared 
+float K;  // Curvature Coeff (K)
+float omega;  // Rotational Velocity in rad/s
+const float velocity = 100.0f;  // Constant Velocity in cm/s
+static constexpr float wheelRadius = 15.24; //cm 
+static constexpr float trackWidth = 43.18;  // Wheel to Wheel in cm 
 float leftMotor;
 float rightMotor;
 
@@ -138,9 +139,17 @@ void AdvancePathSegment() {
     if (distanceToNextWaypoint_sq <= waypoint_radius * waypoint_radius) {
       advancePathSegment();
     }
+    // could add in something to handle overshoot of waypoint radius
   }
 }
+//----------end waypoint handling functions----------//
 
+
+
+
+//---------- start pure pursuit functions----------//
+
+// Find intersection of lookahead circle with the path ahead.
 GoalResult findLookaheadGoal() {
   GoalResult result;
   result.found = false;
@@ -175,6 +184,7 @@ GoalResult findLookaheadGoal() {
     }
   }
 
+  // Fallback: no intersection found, aim at next waypoint directly
   int nextWp = (pathSegIdx < PATH_LENGTH - 1) ? pathSegIdx + 1 : PATH_LENGTH - 1;
   result.gx = path[nextWp].wp_x;
   result.gy = path[nextWp].wp_y;
@@ -182,12 +192,18 @@ GoalResult findLookaheadGoal() {
   return result;
 }
 
+//----------end pure pursuit functions----------//
+
+
+
+
+// Helper to wrap angle to [-PI, PI]
 static float wrapAnglePi(float a) {
   while (a >  PI) a -= 2.0f * PI;
   while (a < -PI) a += 2.0f * PI;
   return a;
 }
-
+// Helper to convert radians to degrees
 float radiansToDegrees(float a) {
   return a * (180.0f / PI);
 }
