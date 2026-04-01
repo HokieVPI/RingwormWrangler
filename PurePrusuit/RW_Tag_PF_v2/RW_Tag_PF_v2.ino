@@ -128,9 +128,8 @@ struct GoalResult {
 };
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
-static constexpr int PATH_LENGTH = 8;
+static constexpr int PATH_LENGTH = 14;
 static Waypoint path[PATH_LENGTH] = {
-<<<<<<< Updated upstream
   {792.5, 152.4},{792.5, 502.4},{792.5, 852.4},{792.5, 1202.4},{792.5, 1552.4},{792.5, 1902.4},{792.5, 2252.4}};
   // {1300,500},{1300,800},{950,800},{950,400},{550,400},{550,800},{200,800},{200,400}};
 =======
