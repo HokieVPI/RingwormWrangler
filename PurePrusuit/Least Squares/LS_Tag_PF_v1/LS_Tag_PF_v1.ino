@@ -13,14 +13,14 @@
 
 // Anchor Locations in cm (x,y) 
 // ANCHOR LOCATIONS FROM 3/30 WRESTLING ROOM TESTING
-const float Anchor1_x = 0;
-const float Anchor1_y = 1273.45f;
-const float Anchor2_x = 1280.16f;
-const float Anchor2_y = 0;
-const float Anchor3_x = 2090.01f;
-const float Anchor3_y = 1125.32f;
-const float Anchor4_x = 0.0f;   // <-- set 4th anchor x coord in cm
-const float Anchor4_y = 0.0f;   // <-- set 4th anchor y coord in cm
+constexpr float Anchor1_x = 0.0f;
+constexpr float Anchor1_y = 1273.45f;
+constexpr float Anchor2_x = 1280.16f;
+constexpr float Anchor2_y = 0.0f;
+constexpr float Anchor3_x = 2090.01f;
+constexpr float Anchor3_y = 1125.32f;
+constexpr float Anchor4_x = 0.0f;   // <-- set 4th anchor x coord in cm
+constexpr float Anchor4_y = 0.0f;   // <-- set 4th anchor y coord in cm
 
 // Initialize Distance Variables
 int dist_1 = 0;
@@ -53,7 +53,7 @@ const int MAX_STALE = 10;
 float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
 int head_index = 0;
-int tail_index = CIRCULAR_BUFFER_SIZE - 1;
+int tail_index = 1;
 volatile bool inRangingHandler = false;
 
 // Pure pursuit variables & constants 
@@ -203,7 +203,7 @@ void driveMotors(float leftRadPerSec, float rightRadPerSec) {
 
 // ----------- 4-Anchor Least Squares Trilateration ----------- //
 #define N_ANCHORS 4
-static const float anchor_matrix[N_ANCHORS][3] = {
+static constexpr float anchor_matrix[N_ANCHORS][3] = {
   {Anchor1_x, Anchor1_y, 0.0f},
   {Anchor2_x, Anchor2_y, 0.0f},
   {Anchor3_x, Anchor3_y, 0.0f},

@@ -624,7 +624,7 @@ hold off
 
 %% data3 postion test 4
 
-data3_6= importdata("test_3_28_7");
+data3_6= importdata("test_3_31_2");
 data3_6 = data3_6.data;
 robotx = [];
 roboty = [];
