@@ -209,10 +209,18 @@ GoalResult findLookaheadGoal() {
     float t1 = (-qb - sqrtDisc) / (2.0f * qa);
     float t2 = (-qb + sqrtDisc) / (2.0f * qa);
 
+    float tMin = 0.0f;
+    if (seg == pathSegIdx && qa > 1e-6f) {
+      float robX = (float)currentX_global - path[seg].wp_x;
+      float robY = (float)currentY_global - path[seg].wp_y;
+      float tRobot = (robX * dsx + robY * dsy) / qa;
+      if (tRobot > 0.0f) tMin = tRobot;
+    }
+
     float bestT = -1.0f;
-    if (t2 >= 0.0f && t2 <= 1.0f) {
+    if (t2 >= tMin && t2 <= 1.0f) {
       bestT = t2;
-    } else if (t1 >= 0.0f && t1 <= 1.0f) {
+    } else if (t1 >= tMin && t1 <= 1.0f) {
       bestT = t1;
     }
 
