@@ -94,8 +94,8 @@ void setup() {
   // Define MAC addresses for this device and the target
   // This device (Controlee) has address 0x1111
   // Target device (Controller) has address 0x2222
-  uint8_t devAddr[] = {0x1111, 0x1111};
-  uint8_t destination[] = {0x2222, 0x2222};
+  uint8_t devAddr[] = {0x2222, 0x2222};
+  uint8_t destination[] = {0x1111, 0x1111};
   UWBMacAddress srcAddr(UWBMacAddress::Size::SHORT, devAddr);
   UWBMacAddress dstAddr(UWBMacAddress::Size::SHORT, destination);
 
