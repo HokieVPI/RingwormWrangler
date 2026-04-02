@@ -8,6 +8,16 @@
 #endif
 
 
+// placing other pins here
+float int ThreePointThreeVoltPin = 3;
+float int UltraSonicTriggerPin = 11;
+float int UltraSonicEchoPin = 12;
+float int S1Pin = 13; // S1 
+float int S2Pin = 14; // S2
+
+
+
+
 /**
  * pure pursuit path following algorithm for a single tag
  working on implementing custom pure pursuit path following algorithm
@@ -73,6 +83,9 @@ static constexpr int wheelRadius = 15;  //cm
 static constexpr int float trackWidth =43.18f;  // Wheel to Wheel in cm 
 float leftMotor; 
 float rightMotor; 
+// Linear Actuator and Pump condition
+float CleaningStage = 0; 
+float ActuatorDuration = 2900 // in (ms)
 
 // RoboClaw UART on Portenta C33: TX = pin 14, RX = pin 13
 UART controllerSerial(14, 13);
@@ -85,6 +98,15 @@ static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
 uint32_t motor_accel = 25000;
 
 Basicmicro controller(&controllerSerial, LIBRARY_READ_TIMEOUT);
+
+// Linear Actuator Motor Controller: Retract = pin 6, Extend = pin 7
+
+const int RetractPin = 6;
+const int ExtentPin = 7;
+const int PumpPin = 1; // orange
+const int SolenoidPin = 2; // green
+
+
 
 // ----------- Functions----------//
 
@@ -137,6 +159,37 @@ bool PathComplete(){
   return
    pathSegIdx == PATH_LENGTH - 1;
 }
+
+
+// Defines running pump and moving mop
+void SprayActive() {
+  if(CleaningStage = 0) {
+
+  } else {
+
+  }
+
+}
+
+void MopActive() {
+  if(CleaningStage = 1) {
+    digitalWrite(ExtendPin, HIGH);
+    digitalWrite(RetractPin, LOW);
+    delay(ActuatorDuration);
+    digitalWrite(ExtendPin, LOW);
+
+  } else if(CleaningStage = 2) {
+    digitalWrite(ExtendPin, LOW);
+    digitalWrite(RetractPin, HIGH);
+    delay(ActuatorDuration);
+    digitalWrite(RetractPin, LOW);
+
+  } else {
+    digitalWrite(ExtendPin, LOW);
+    digitalWrite(RetractPin, LOW);
+  }
+}
+
 
 // advance when the tag is within the waypoint radius of the next waypoint
 void AdvancePathSegment(){
@@ -471,12 +524,19 @@ void loop() {
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
   if (PathComplete()) {
-    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                 motor_accel, 0,
-                                 motor_accel, 0);
-    Serial.println("Path Complete");
-    inRangingHandler = false;
-    return;
+    // Advance cleaning stage
+    CleaningStage = CleaningStage + 1
+    SprayActive();
+    MopActive();
+    // Insert code to start path following again
+    if (CleaningStage = 2) {
+      controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                   motor_accel, 0,
+                                   motor_accel, 0);
+      // Serial.println("Path Complete");
+      inRangingHandler = false;
+      return;
+    }
   }
 
   GoalResult goal = findLookaheadGoal();
