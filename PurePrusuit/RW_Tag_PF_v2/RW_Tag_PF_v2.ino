@@ -27,25 +27,29 @@ float insight_A3;
 float insight_A4;
 // Anchor Locations in Centimeters (x,y) z=0 
 
+// const float Anchor1_x=0;// cm 
+// const float Anchor1_y=1273.45; // cm  41.78 ft 
+// const float Anchor2_x=1280.16; // cm  42.23ft 
+// const float Anchor2_y=0; // cm 
+// const float Anchor3_x=2090.01; // cm 
+// const float Anchor3_y=1125.32; // cm 36.92 ft 
+// const float Anchor4_x=819.91; // cm  
+// const float Anchor4_y=2654.19; // cm 
+
+
+
 const float Anchor1_x=0;// cm 
-const float Anchor1_y=1273.45; // cm  41.78 ft 
-const float Anchor2_x=1280.16; // cm  42.23ft 
+const float Anchor1_y=0; // cm 
+const float Anchor2_x=722; // cm 
 const float Anchor2_y=0; // cm 
-const float Anchor3_x=2090.01; // cm 
-const float Anchor3_y=1125.32; // cm 36.92 ft 
-const float Anchor4_x=819.91; // cm  
-const float Anchor4_y=2654.19; // cm 
+const float Anchor3_x=722; // cm 
+const float Anchor3_y=445; // cm 
+const float Anchor4_x=0; // cm  
+const float Anchor4_y=707; // cm 
 
 static constexpr int NUM_ANCHORS = 4;
 const float anchorX[NUM_ANCHORS] = {Anchor1_x, Anchor2_x, Anchor3_x, Anchor4_x};
 const float anchorY[NUM_ANCHORS] = {Anchor1_y, Anchor2_y, Anchor3_y, Anchor4_y};
-
-// const float Anchor1_x=0;// cm 
-// const float Anchor1_y=617.22; // cm 
-// const float Anchor2_x=1280.16; // cm 
-// const float Anchor2_y=0; // cm 
-// const float Anchor3_x=1708.41; // cm 
-// const float Anchor3_y=1570.03; // cm 
 
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=0; // cm 
@@ -91,9 +95,17 @@ volatile bool inRangingHandler = false;
 float tRobot = 0.0f;
 float tMin = tRobot+0.2f;
 // waypoint constant
-static constexpr int waypoint_radius = 100; // cm
-static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
-static constexpr float look_ahead=200.0f; // cm
+// for wrestling room
+// static constexpr int waypoint_radius = 100; // cm
+// static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
+// static constexpr float look_ahead=200.0f; // cm
+
+// for lab space
+static constexpr int waypoint_radius = 50; // cm
+static constexpr int final_waypoint_radius = 100; // cm (larger radius only for final waypoint)
+static constexpr float look_ahead=100.0f; // cm
+
+
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
@@ -102,7 +114,13 @@ float L_d; // Look-Ahead Distance in cm
 float L_d2; // Look-Ahead Distance squared 
 float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
-const float velocity = 100.0f;  // Constant Velocity in cm/s
+
+// for wrestling room
+// const float velocity = 100.0f;  // Constant Velocity in cm/s
+
+// for lab space
+const float velocity = 50.0f;  // Constant Velocity in cm/s
+
 static constexpr float wheelRadius = 15.24f;  //cm 
 static constexpr float trackWidth =43.18f;  // Wheel to Wheel in cm 
 float leftMotor; 
@@ -150,10 +168,20 @@ struct GoalResult {
 static constexpr int PATH_LENGTH = 8;
 
 static Waypoint path[PATH_LENGTH] = {
-  {200, 502.4},{200, 2252.4},
-  {442.5, 2252.4}, {442.5, 200},
-  {792.5, 200},{792.5, 2252.4},
-  {1142.5, 2252.4}, {1142.5, 200}};
+  // for wrestling room
+  // {200, 502.4},{200, 2252.4},
+  // {442.5, 2252.4}, {442.5, 200},
+  // {792.5, 200},{792.5, 2252.4},
+  // {1142.5, 2252.4}, {1142.5, 200}
+
+  // for lab space
+     {240, 146},
+     {240, 386},
+     {452, 386},
+     {452, 146},
+  };
+
+  // for 
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
@@ -620,6 +648,8 @@ delay(10);
   if (PathComplete()) {
     // Advance cleaning stage
     CleaningStage = CleaningStage + 1;
+    // does pass again
+    pathSegIdx = 0;
     SprayActive();
     MopActive();
     // Insert code to start path following again
