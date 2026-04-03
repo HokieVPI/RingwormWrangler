@@ -12,11 +12,11 @@
 
 
 // placing other pins here
-float int ThreePointThreeVoltPin = 3;
-float int UltraSonicTriggerPin = 11;
-float int UltraSonicEchoPin = 12;
-float int S1Pin = 13; // S1 
-float int S2Pin = 14; // S2
+const int ThreePointThreeVoltPin = 3;
+const int UltraSonicTriggerPin = 11;
+const int UltraSonicEchoPin = 12;
+const int S1Pin = 13; // S1
+const int S2Pin = 14; // S2
 
 
 
@@ -87,13 +87,13 @@ float L_d2; // Look-Ahead Distance squared
 float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
 const float velocity = 50.0f;  // Constant Velocity in cm/s
-static constexpr int wheelRadius = 15;  //cm 
-static constexpr int float trackWidth =43.18f;  // Wheel to Wheel in cm 
+static constexpr int wheelRadius = 15;  // cm
+static constexpr float trackWidth = 43.18f;  // Wheel to Wheel in cm
 float leftMotor; 
 float rightMotor; 
 // Linear Actuator and Pump condition
 float CleaningStage = 0; 
-float ActuatorDuration = 2900 // in (ms)
+float ActuatorDuration = 2900;  // in (ms)
 
 // RoboClaw UART on Portenta C33: TX = pin 14, RX = pin 13
 UART controllerSerial(14, 13);
@@ -184,31 +184,41 @@ bool PathComplete(){
 
 
 
-// Defines running pump and moving mop
-void SprayActive() {
-  if(CleaningStage = 0) {
+// Pump on + solenoid off pressurizes bladder while spray-active (no timers).
+// After PathComplete(), CleaningStage is incremented before SprayActive(); stage 1 is the first cleaning phase.
+static bool sprayOutputsActive() {
+  return CleaningStage == 1;
+}
 
+void applySprayOutputs() {
+  if (sprayOutputsActive()) {
+    digitalWrite(SolenoidPin, LOW);
+    digitalWrite(PumpPin, HIGH);
   } else {
-
+    digitalWrite(PumpPin, LOW);
+    digitalWrite(SolenoidPin, LOW);
   }
+}
 
+void SprayActive() {
+  applySprayOutputs();
 }
 
 void MopActive() {
-  if(CleaningStage = 1) {
-    digitalWrite(ExtendPin, HIGH);
+  if (CleaningStage == 1) {
+    digitalWrite(ExtentPin, HIGH);
     digitalWrite(RetractPin, LOW);
     delay(ActuatorDuration);
-    digitalWrite(ExtendPin, LOW);
+    digitalWrite(ExtentPin, LOW);
 
-  } else if(CleaningStage = 2) {
-    digitalWrite(ExtendPin, LOW);
+  } else if (CleaningStage == 2) {
+    digitalWrite(ExtentPin, LOW);
     digitalWrite(RetractPin, HIGH);
     delay(ActuatorDuration);
     digitalWrite(RetractPin, LOW);
 
   } else {
-    digitalWrite(ExtendPin, LOW);
+    digitalWrite(ExtentPin, LOW);
     digitalWrite(RetractPin, LOW);
   }
 }
@@ -538,7 +548,14 @@ void setup() {
   controller.SetM1VelocityPID(MOTOR_ADDRESS, 1.79279, 0.27940, 0.00000, 70620);
   controller.SetM2VelocityPID(MOTOR_ADDRESS, 1.74675, 0.26201, 0.00000, 69630);
 
+  pinMode(PumpPin, OUTPUT);
+  pinMode(SolenoidPin, OUTPUT);
+  pinMode(RetractPin, OUTPUT);
+  pinMode(ExtentPin, OUTPUT);
+  digitalWrite(PumpPin, LOW);
+  digitalWrite(SolenoidPin, LOW);
 }
+
 
 void loop() {
   #if defined(ARDUINO_PORTENTA_C33)
@@ -552,6 +569,8 @@ void loop() {
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
 
+  applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
+
 
 
 
@@ -560,11 +579,11 @@ void loop() {
 
   if (PathComplete()) {
     // Advance cleaning stage
-    CleaningStage = CleaningStage + 1
+    CleaningStage = CleaningStage + 1;
     SprayActive();
     MopActive();
     // Insert code to start path following again
-    if (CleaningStage = 2) {
+    if (CleaningStage == 2) {
       controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
                                    motor_accel, 0,
                                    motor_accel, 0);
