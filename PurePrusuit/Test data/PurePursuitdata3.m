@@ -47,9 +47,11 @@ axis equal
 hold off
 
 %% test_3_23_5
-waypoints5 = [125 125;
-              300 125;
-              300 200];
+waypoints5 = [631 329;
+              544 549;
+              499 706;
+              597 862;
+              740 1019];
 
 raw = importdata("test_3_23_5");
 raw = raw.data;
@@ -179,11 +181,10 @@ axis equal
 hold off
 
 %% test_3_23_8
-waypoints8 = [75 60;
-              145 75;
-              250 90];
+waypoints8 = [890 308;
+              890 1097];
 
-fid = fopen("test_3_23_8", "r");
+fid = fopen("test_3_27_1", "r");
 lines = {};
 while ~feof(fid)
     lines{end+1} = fgetl(fid);
@@ -379,3 +380,127 @@ legend("Robot Position", "Waypoints", "Goal Points", "Path Complete")
 axis equal
 hold off
 end
+%% Test 3_29_1
+waypoints3_31_1 = [200 502.4;
+              200 2252.4;
+              442.5 2252.4;
+              442.5 200;
+              792.5 200;
+              792.5 2252.4;
+              1142.5 2252.4;
+              1142.5 200];
+
+raw = importdata("test_3_31_night12");
+raw = raw.data;
+
+goalX = []; goalY = [];
+desiredHeading = []; globalAzimuth = [];
+currentX = []; currentY = [];
+
+i = 1;
+while i <= height(raw) - 5
+    goalX          = [goalX;          raw(i,   1)];
+    goalY          = [goalY;          raw(i+1, 1)];
+    desiredHeading = [desiredHeading; raw(i+2, 1)];
+    globalAzimuth  = [globalAzimuth;  raw(i+3, 1)];
+    currentX       = [currentX;       raw(i+4, 1)];
+    currentY       = [currentY;       raw(i+5, 1)];
+    i = i + 6;
+end
+
+valid = currentY >= 0;
+currentX = currentX(valid); currentY = currentY(valid);
+desiredHeading = desiredHeading(valid); globalAzimuth = globalAzimuth(valid);
+goalX = goalX(valid); goalY = goalY(valid);
+
+figure
+hold on
+scatter(currentX, currentY, 'filled')
+scatter(waypoints3_31_1(:,1), waypoints3_31_1(:,2), 100, 'm', 'filled')
+scatter(goalX, goalY, 25, 'g', 'filled')
+for k = 1:length(desiredHeading)
+    plot([currentX(k), currentX(k)+4*cos(desiredHeading(k)*(pi/180))], ...
+         [currentY(k), currentY(k)+4*sin(desiredHeading(k)*(pi/180))],'LineWidth',1)
+end
+mapArea = [0 0;
+    70*2.54*12 0;
+    70*2.54*12 32.4*2.54*12;
+    (70-2)*2.54*12 (32.4)*2.54*12;
+    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+    0 (32.4+19.81+14.75+20)*2.54*12;
+    0 0];
+plot(mapArea(:,1),mapArea(:,2))
+title("Pure Pursuit X-Y Position")
+xlabel("x position (cm)")
+ylabel("y position (cm)")
+legend("Robot Position", "Waypoints", "Goal Points")
+axis equal
+grid on 
+hold off
+
+%% test_3_31_night12
+waypoints3_31_1 = [200 502.4;
+              200 2252.4;
+              442.5 2252.4;
+              442.5 200;
+              792.5 200;
+              792.5 2252.4;
+              1142.5 2252.4;
+              1142.5 200];
+
+raw = importdata("test_3_31_night11");
+raw = raw.data;
+
+goalX = []; goalY = [];
+desiredHeading = []; globalAzimuth = [];
+currentX = []; currentY = [];
+
+i = 1;
+while i <= height(raw) - 5
+    goalX          = [goalX;          raw(i,   1)];
+    goalY          = [goalY;          raw(i+1, 1)];
+    desiredHeading = [desiredHeading; raw(i+2, 1)];
+    globalAzimuth  = [globalAzimuth;  raw(i+3, 1)];
+    currentX       = [currentX;       raw(i+4, 1)];
+    currentY       = [currentY;       raw(i+5, 1)];
+    i = i + 6;
+end
+
+valid = currentY >= 0;
+currentX = currentX(valid); currentY = currentY(valid);
+desiredHeading = desiredHeading(valid); globalAzimuth = globalAzimuth(valid);
+goalX = goalX(valid); goalY = goalY(valid);
+
+figure
+hold on
+scatter(currentX, currentY, 'filled')
+scatter(waypoints3_31_1(:,1), waypoints3_31_1(:,2), 100, 'm', 'filled')
+scatter(goalX, goalY, 25, 'g', 'filled')
+for k = 1:length(desiredHeading)
+    plot([currentX(k), currentX(k)+4*cos(desiredHeading(k)*(pi/180))], ...
+         [currentY(k), currentY(k)+4*sin(desiredHeading(k)*(pi/180))],'LineWidth',1)
+end
+mapArea = [0 0;
+    70*2.54*12 0;
+    70*2.54*12 32.4*2.54*12;
+    (70-2)*2.54*12 (32.4)*2.54*12;
+    (70-2)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81)*2.54*12;
+    (70-2-12.5)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75)*2.54*12;
+    (70-2-12.5-4.45)*2.54*12 (32.4+19.81+14.75+20)*2.54*12;
+    0 (32.4+19.81+14.75+20)*2.54*12;
+    0 0];
+plot(mapArea(:,1),mapArea(:,2))
+title("Pure Pursuit X-Y Position")
+xlabel("x position (cm)")
+ylabel("y position (cm)")
+legend("Robot Position", "Waypoints", "Goal Points")
+axis equal
+grid on 
+hold off
+
