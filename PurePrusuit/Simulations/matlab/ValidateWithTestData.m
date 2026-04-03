@@ -286,7 +286,7 @@ function printMetrics(cfg, rd, realCT, allCT, completed, nRuns)
     fprintf('  Ratio (real/wp)    : %.2f\n', realPathLen / wpPathLen);
 end
 
-%% ==== Simulation core (extracted from TenPointPurePursuitGUI) ====
+%% ==== Simulation core (extracted from PurePrusuitTuning) ====
 function [xt,yt,xm,ym,pathEnded,hitMaxSteps,wallFail] = simulateRun( ...
         path, velocity, lookahead, wpRadius, endRadius, ...
         posStd, headStd, trackW, wheelR, dt, maxSteps, seed, outerWalls)

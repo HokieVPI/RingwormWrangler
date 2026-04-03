@@ -132,6 +132,7 @@ struct GoalResult {
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
 static constexpr int PATH_LENGTH = 8;
+
 static Waypoint path[PATH_LENGTH] = {
   {200, 502.4},{200, 2252.4},
   {442.5, 2252.4}, {442.5, 200},
@@ -295,6 +296,7 @@ static const AnchorCombo combos[4] = {
   {0, 1, 3},  // Anchors 1,2,4
   {0, 2, 3},  // Anchors 1,3,4
   {1, 2, 3},  // Anchors 2,3,4
+  
 };
 
 // handler for ranging notifications

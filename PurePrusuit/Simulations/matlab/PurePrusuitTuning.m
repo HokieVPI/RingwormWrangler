@@ -1,5 +1,5 @@
-function TenPointPurePursuitGUI()
-% TenPointPurePursuitGUI
+function PurePrusuitTuning()
+% PurePrusuitTuning
 % MATLAB UI to tune pure pursuit and plan obstacle-aware mowing waypoints.
 %
 % Features:
@@ -12,7 +12,7 @@ function TenPointPurePursuitGUI()
 % - Monte Carlo simulation with soft-avoidance rate metric.
 %
 % To run:
-%   >> TenPointPurePursuitGUI
+%   >> PurePrusuitTuning
 
     %% Defaults
     POSITION_NOISE_STD_DEFAULT = 35.34;       % cm (per-axis)
@@ -46,7 +46,7 @@ function TenPointPurePursuitGUI()
     PATH = rebuildPath();
 
     %% UI
-    fig = uifigure('Name','Pure Pursuit Simulator', 'Position',[50 30 1430 900]);
+    fig = uifigure('Name','Pure Pursuit Tuning', 'Position',[50 30 1430 900]);
     cancelRequested = false;
 
     pnl = uipanel(fig, 'Title','Parameters', 'Position',[15 15 360 870]);
@@ -291,8 +291,8 @@ function TenPointPurePursuitGUI()
         plot(axTraj, MAP_AREA(:,1), MAP_AREA(:,2), 'k-', 'LineWidth',1.2); hold(axTraj,'on');
         drawObstacles(axTraj);
         if ~isempty(PATH) && size(PATH,1) >= 2
-            plot(axTraj, PATH(:,1), PATH(:,2), 'g--', 'LineWidth',1.5);
-            plot(axTraj, PATH(:,1), PATH(:,2), 'go', 'MarkerSize',5, 'LineWidth',1.0);
+            plot(axTraj, PATH(:,1), PATH(:,2), 'g--o', 'LineWidth',1.5, 'MarkerSize',5, ...
+                'MarkerFaceColor',[0 0.6 0], 'MarkerEdgeColor',[0 0.5 0]);
         end
         title(axTraj,'Waypoint preview');
         axis(axTraj,'equal'); grid(axTraj,'on'); hold(axTraj,'off');
@@ -310,19 +310,20 @@ function TenPointPurePursuitGUI()
             end
             if strcmp(o.type,'circle')
                 cx=o.params(1); cy=o.params(2); r=o.params(3);
-                fill(ax, cx + r*cos(tt), cy + r*sin(tt), face, 'FaceAlpha',0.15, 'EdgeColor',edge, 'LineWidth',1.2);
+                fill(ax, cx + r*cos(tt), cy + r*sin(tt), face, 'FaceAlpha',0.15, 'EdgeColor',edge, 'LineWidth',1.2, 'HandleVisibility','off');
                 if INFLATION_CM > 0
                     rInfl = r + INFLATION_CM; if ~o.hard, rInfl = r + INFLATION_CM*(o.weight/100); end
-                    plot(ax, cx + rInfl*cos(tt), cy + rInfl*sin(tt), '--', 'Color',edge, 'LineWidth',0.8);
+                    plot(ax, cx + rInfl*cos(tt), cy + rInfl*sin(tt), '--', 'Color',edge, 'LineWidth',0.8, 'HandleVisibility','off');
                 end
             else
                 xmin=o.params(1); ymin=o.params(2); w=o.params(3); h=o.params(4);
-                patch(ax, [xmin xmin+w xmin+w xmin], [ymin ymin ymin+h ymin+h], face, 'FaceAlpha',0.15, 'EdgeColor',edge, 'LineWidth',1.2);
+                patch(ax, [xmin xmin+w xmin+w xmin], [ymin ymin ymin+h ymin+h], face, 'FaceAlpha',0.15, 'EdgeColor',edge, 'LineWidth',1.2, 'HandleVisibility','off');
                 if INFLATION_CM > 0
                     infl = INFLATION_CM; if ~o.hard, infl = INFLATION_CM*(o.weight/100); end
                     patch(ax, [xmin-infl xmin+w+infl xmin+w+infl xmin-infl], ...
                               [ymin-infl ymin-infl ymin+h+infl ymin+h+infl], ...
-                          'none', 'EdgeColor',edge, 'LineWidth',0.8, 'LineStyle','--');
+                          [1 1 1], 'FaceColor','none', 'EdgeColor',edge, 'LineWidth',0.8, ...
+                          'LineStyle','--', 'HandleVisibility','off');
                 end
             end
         end
@@ -467,20 +468,22 @@ function TenPointPurePursuitGUI()
 
         % Trajectory plot
         cla(axTraj);
-        plot(axTraj, MAP_AREA(:,1), MAP_AREA(:,2), 'k-', 'LineWidth',1.2); hold(axTraj,'on');
+        hMap = plot(axTraj, MAP_AREA(:,1), MAP_AREA(:,2), 'k-', 'LineWidth',1.2); hold(axTraj,'on');
         drawObstacles(axTraj);
-        plot(axTraj, PATH(:,1), PATH(:,2), 'g--', 'LineWidth',1.5);
-        plot(axTraj, PATH(:,1), PATH(:,2), 'go', 'MarkerSize',5, 'LineWidth',1.0);
+        hPlan = plot(axTraj, PATH(:,1), PATH(:,2), 'g--o', 'LineWidth',1.5, 'MarkerSize',5, ...
+            'MarkerFaceColor',[0 0.6 0], 'MarkerEdgeColor',[0 0.5 0]);
         for i = 1:nRuns
             if ~isempty(allXT{i})
-                plot(axTraj, allXT{i}, allYT{i}, 'r-', 'LineWidth',0.5);
+                plot(axTraj, allXT{i}, allYT{i}, 'r-', 'LineWidth',0.5, 'HandleVisibility','off');
             end
         end
-        plot(axTraj, xmR, ymR, 'r.', 'MarkerSize',6);
-        plot(axTraj, xtR, ytR, 'b-', 'LineWidth',1.4);
-        plot(axTraj, xtR(1), ytR(1), 'ms', 'MarkerSize',10, 'LineWidth',1.5);
-        plot(axTraj, xtR(end), ytR(end), 'r^', 'MarkerSize',10, 'LineWidth',1.5);
-        legend(axTraj, {'Map','Obstacles','Waypoints','','MC runs','Measured','Representative','Start','End'}, 'Location','best');
+        hMC = plot(axTraj, NaN, NaN, 'r-', 'LineWidth',0.5);
+        hMeas = plot(axTraj, xmR, ymR, 'r.', 'MarkerSize',6);
+        hTruth = plot(axTraj, xtR, ytR, 'b-', 'LineWidth',1.4);
+        hStart = plot(axTraj, xtR(1), ytR(1), 'ms', 'MarkerSize',10, 'LineWidth',1.5);
+        hGoal = plot(axTraj, xtR(end), ytR(end), 'r^', 'MarkerSize',10, 'LineWidth',1.5);
+        legend(axTraj, [hMap, hPlan, hMC, hMeas, hTruth, hStart, hGoal], ...
+            {'Map','Plan','MC','Meas','Truth','Start','Goal'}, 'Location','best');
         title(axTraj, sprintf('Trajectory (seed=%d)', repSeed));
         axis(axTraj,'equal'); grid(axTraj,'on');
 

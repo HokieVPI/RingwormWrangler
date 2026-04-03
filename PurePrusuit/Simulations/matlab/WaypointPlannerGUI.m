@@ -12,7 +12,7 @@ function WaypointPlannerGUI()
 % - Coverage + Connectors (grid planner when straight links invalid)
 % - Start → Goal (grid A*)
 
-    %% Map (same as TenPointPurePursuitGUI)
+    %% Map (same as PurePrusuitTuning)
     MAP_AREA = [
         0 0
         70*2.54*12 0
