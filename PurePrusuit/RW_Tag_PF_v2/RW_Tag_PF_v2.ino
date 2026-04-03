@@ -8,12 +8,20 @@
 #endif
 
 
+
+
+
 // placing other pins here
 float int ThreePointThreeVoltPin = 3;
 float int UltraSonicTriggerPin = 11;
 float int UltraSonicEchoPin = 12;
 float int S1Pin = 13; // S1 
 float int S2Pin = 14; // S2
+
+
+
+
+
 
 
 
@@ -99,12 +107,23 @@ uint32_t motor_accel = 25000;
 
 Basicmicro controller(&controllerSerial, LIBRARY_READ_TIMEOUT);
 
+
+
+
+
+
 // Linear Actuator Motor Controller: Retract = pin 6, Extend = pin 7
 
 const int RetractPin = 6;
 const int ExtentPin = 7;
 const int PumpPin = 1; // orange
 const int SolenoidPin = 2; // green
+
+
+
+
+
+
 
 
 
@@ -161,6 +180,10 @@ bool PathComplete(){
 }
 
 
+
+
+
+
 // Defines running pump and moving mop
 void SprayActive() {
   if(CleaningStage = 0) {
@@ -189,6 +212,11 @@ void MopActive() {
     digitalWrite(RetractPin, LOW);
   }
 }
+
+
+
+
+
 
 
 // advance when the tag is within the waypoint radius of the next waypoint
@@ -523,6 +551,13 @@ void loop() {
   }
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
+
+
+
+
+
+
+
   if (PathComplete()) {
     // Advance cleaning stage
     CleaningStage = CleaningStage + 1
@@ -538,6 +573,13 @@ void loop() {
       return;
     }
   }
+
+
+
+
+
+
+
 
   GoalResult goal = findLookaheadGoal();
 
