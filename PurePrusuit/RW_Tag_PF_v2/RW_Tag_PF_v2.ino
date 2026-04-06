@@ -35,25 +35,25 @@ float insight_A3;
 float insight_A4;
 // Anchor Locations in Centimeters (x,y) z=0 
 
-// const float Anchor1_x=0;// cm 
-// const float Anchor1_y=1273.45; // cm  41.78 ft 
-// const float Anchor2_x=1280.16; // cm  42.23ft 
-// const float Anchor2_y=0; // cm 
-// const float Anchor3_x=2090.01; // cm 
-// const float Anchor3_y=1125.32; // cm 36.92 ft 
-// const float Anchor4_x=819.91; // cm  
-// const float Anchor4_y=2654.19; // cm 
-
-
-
 const float Anchor1_x=0;// cm 
-const float Anchor1_y=0; // cm 
-const float Anchor2_x=722; // cm 
+const float Anchor1_y=1273.45; // cm  41.78 ft 
+const float Anchor2_x=1280.16; // cm  42.23ft 
 const float Anchor2_y=0; // cm 
-const float Anchor3_x=722; // cm 
-const float Anchor3_y=445; // cm 
-const float Anchor4_x=0; // cm  
-const float Anchor4_y=707; // cm 
+const float Anchor3_x=2090.01; // cm 
+const float Anchor3_y=1125.32; // cm 36.92 ft 
+const float Anchor4_x=819.91; // cm  
+const float Anchor4_y=2654.19; // cm 
+
+
+
+// const float Anchor1_x=0;// cm 
+// const float Anchor1_y=0; // cm 
+// const float Anchor2_x=722; // cm 
+// const float Anchor2_y=0; // cm 
+// const float Anchor3_x=722; // cm 
+// const float Anchor3_y=445; // cm 
+// const float Anchor4_x=0; // cm  
+// const float Anchor4_y=707; // cm 
 
 static constexpr int NUM_ANCHORS = 4;
 const float anchorX[NUM_ANCHORS] = {Anchor1_x, Anchor2_x, Anchor3_x, Anchor4_x};
@@ -104,14 +104,14 @@ float tRobot = 0.0f;
 float tMin = tRobot+0.2f;
 // waypoint constant
 // for wrestling room
-// static constexpr int waypoint_radius = 100; // cm
-// static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
-// static constexpr float look_ahead=200.0f; // cm
+static constexpr int waypoint_radius = 100; // cm
+static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
+static constexpr float look_ahead=200.0f; // cm
 
 // for lab space
-static constexpr int waypoint_radius = 50; // cm
-static constexpr int final_waypoint_radius = 100; // cm (larger radius only for final waypoint)
-static constexpr float look_ahead=100.0f; // cm
+// static constexpr int waypoint_radius = 50; // cm
+// static constexpr int final_waypoint_radius = 100; // cm (larger radius only for final waypoint)
+// static constexpr float look_ahead=100.0f; // cm
 
 
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
@@ -124,10 +124,10 @@ float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
 
 // for wrestling room
-// const float velocity = 100.0f;  // Constant Velocity in cm/s
+const float velocity = 100.0f;  // Constant Velocity in cm/s
 
 // for lab space
-const float velocity = 50.0f;  // Constant Velocity in cm/s
+// const float velocity = 50.0f;  // Constant Velocity in cm/s
 
 static constexpr float wheelRadius = 15.24f;  //cm 
 static constexpr float trackWidth =43.18f;  // Wheel to Wheel in cm 
@@ -176,18 +176,18 @@ struct GoalResult {
 static constexpr int PATH_LENGTH = 5;
 
 static Waypoint path[PATH_LENGTH] = {
-  // for wrestling room
-  // {200, 502.4},{200, 2252.4},
-  // {442.5, 2252.4}, {442.5, 200},
-  // {792.5, 200},{792.5, 2252.4},
-  // {1142.5, 2252.4}, {1142.5, 200}
+  for wrestling room
+  {200, 502.4},{200, 2252.4},
+  {442.5, 2252.4}, {442.5, 200},
+  {792.5, 200},{792.5, 2252.4},
+  {1142.5, 2252.4}, {1142.5, 200}
 
   // for lab space
-     {240, 146},
-     {240, 386},
-     {452, 386},
-     {452, 146},
-     {240, 146},
+    //  {240, 146},
+    //  {240, 386},
+    //  {452, 386},
+    //  {452, 146},
+    //  {240, 146},
   };
 
   // for 
@@ -228,11 +228,11 @@ static bool sprayOutputsActive() {
 
 void applySprayOutputs() {
   if (sprayOutputsActive()) {
-    digitalWrite(SolenoidPin, LOW);
-    // digitalWrite(PumpPin, HIGH);
-  } else {
-    // digitalWrite(PumpPin, HIGH);
     digitalWrite(SolenoidPin, HIGH);
+    digitalWrite(PumpPin, HIGH);
+  } else {
+    digitalWrite(PumpPin, LOW);
+    digitalWrite(SolenoidPin, LOW);
   }
 }
 
@@ -643,15 +643,10 @@ void setup() {
 }
 
 void loop() {
-  pinMode(RoboClawFusePin, OUTPUT);
+  // pinMode(RoboClawFusePin, OUTPUT);
   // digitalWrite(2, HIGH);
   // digitalWrite(1, HIGH);
   // digitalWrite(0, HIGH);
-  if (CleaningStage < 2) {
-    digitalWrite(RoboClawFusePin, HIGH);
-  } else {
-    digitalWrite(RoboClawFusePin, LOW);
-  }
   
   #if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
