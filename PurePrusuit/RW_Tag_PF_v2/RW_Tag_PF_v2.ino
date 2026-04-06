@@ -7,11 +7,19 @@
 #endif
 
 // placing other pins here
-const int ThreePointThreeVoltPin = 3;
+const int RoboClawFusePin = 3;
+const int SolenoidFusePin = 2;
+const int PumpFusePin = 1;
 const int UltraSonicTriggerPin = 11;
 const int UltraSonicEchoPin = 12;
 const int S1Pin = 13; // S1
 const int S2Pin = 14; // S2
+
+
+
+// orange, blue, white, green
+// 0, 1, 2, 4
+
 
 /**
  * pure pursuit path following algorithm for a single tag
@@ -135,7 +143,7 @@ UART controllerSerial(14, 13);
 #define MOTOR_ADDRESS        128
 #define LIBRARY_READ_TIMEOUT 10000
 
-static constexpr float ENCODER_CPR   = -24293.0f;
+static constexpr float ENCODER_CPR   = 24293.0f;
 static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
 uint32_t motor_accel = 20000;
 
@@ -165,7 +173,7 @@ struct GoalResult {
 };
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
-static constexpr int PATH_LENGTH = 8;
+static constexpr int PATH_LENGTH = 5;
 
 static Waypoint path[PATH_LENGTH] = {
   // for wrestling room
@@ -179,6 +187,7 @@ static Waypoint path[PATH_LENGTH] = {
      {240, 386},
      {452, 386},
      {452, 146},
+     {240, 146},
   };
 
   // for 
@@ -214,16 +223,16 @@ bool PathComplete(){
 // Pump on + solenoid off pressurizes bladder while spray-active (no timers).
 // After PathComplete(), CleaningStage is incremented before SprayActive(); stage 1 is the first cleaning phase.
 static bool sprayOutputsActive() {
-  return CleaningStage == 1;
+  return CleaningStage == 0;
 }
 
 void applySprayOutputs() {
   if (sprayOutputsActive()) {
     digitalWrite(SolenoidPin, LOW);
-    digitalWrite(PumpPin, HIGH);
+    // digitalWrite(PumpPin, HIGH);
   } else {
-    digitalWrite(PumpPin, LOW);
-    digitalWrite(SolenoidPin, LOW);
+    // digitalWrite(PumpPin, HIGH);
+    digitalWrite(SolenoidPin, HIGH);
   }
 }
 
@@ -634,6 +643,16 @@ void setup() {
 }
 
 void loop() {
+  pinMode(RoboClawFusePin, OUTPUT);
+  // digitalWrite(2, HIGH);
+  // digitalWrite(1, HIGH);
+  // digitalWrite(0, HIGH);
+  if (CleaningStage < 2) {
+    digitalWrite(RoboClawFusePin, HIGH);
+  } else {
+    digitalWrite(RoboClawFusePin, LOW);
+  }
+  
   #if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));
@@ -642,18 +661,26 @@ delay(10);
   while (inRangingHandler || !newPosition) {
     delay(10);
   }
+  // Serial.println(pathSegIdx);
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
   applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
+  // digitalWrite(RoboClawFusePin, HIGH);
   if (PathComplete()) {
     // Advance cleaning stage
     CleaningStage = CleaningStage + 1;
     // does pass again
+    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                motor_accel, 0,
+                                motor_accel, 0);
+    delay(3000);
     pathSegIdx = 0;
+    
     SprayActive();
     MopActive();
     // Insert code to start path following again
     if (CleaningStage == 2) {
+      // digitalWrite(RoboClawFusePin, LOW);
       controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
                                    motor_accel, 0,
                                    motor_accel, 0);
@@ -670,15 +697,14 @@ delay(10);
 
   float angleToGoal = atan2f(delta_y, delta_x);
   // Serial.print("Goal xy: ");
-  Serial.println(goal.gx);
-  Serial.println(goal.gy);
+  // Serial.println(goal.gx);
+  // Serial.println(goal.gy);
   float DesiredHeading = radiansToDegrees(angleToGoal);
-  // Serial.print("Desired Heading: ");
-  Serial.println(DesiredHeading);
+  // Serial.println(DesiredHeading);
   float azimuth_deg = radiansToDegrees(global_azimuth);
-  Serial.println(azimuth_deg);
-  Serial.println(currentX_global);
-  Serial.println(currentY_global);
+  // Serial.println(azimuth_deg);
+  // Serial.println(currentX_global);
+  // Serial.println(currentY_global);
 
   L_d2 = delta_x * delta_x + delta_y * delta_y;
   L_d = sqrtf(L_d2);
@@ -699,8 +725,8 @@ delay(10);
   } else {
     K = 2.0f * sinf(alpha) / L_d;
     omega = K * cmdVelocity;
-    leftMotor  = (cmdVelocity - omega * trackWidth / 2.0f) / wheelRadius;
-    rightMotor = (cmdVelocity + omega * trackWidth / 2.0f) / wheelRadius;
+    leftMotor  = (cmdVelocity + omega * trackWidth / 2.0f) / wheelRadius;
+    rightMotor = (cmdVelocity - omega * trackWidth / 2.0f) / wheelRadius;
     driveMotors(leftMotor, rightMotor);
   }
 }

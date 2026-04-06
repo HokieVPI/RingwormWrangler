@@ -7,41 +7,45 @@
 //   'r' or 'R'  -> retract for 1 second
 //   's' or 'S'  -> stop immediately
 
-const int IN1_PIN = 3;   // Connected to MP6550 IN1
-const int IN2_PIN = 2;   // Connected to MP6550 IN2
+const int RetractPin = 6;
+const int ExtentPin = 7;
 
 // Duration (ms) to run the actuator per command
-const unsigned long RUN_DURATION_MS = 2900;
+float ActuatorDuration = 2900;
 // 2.9 sec
 void stopActuator() {
   // Brake / coast: both LOW (check datasheet; LOW/LOW is usually brake)
-  digitalWrite(IN1_PIN, LOW);
-  digitalWrite(IN2_PIN, LOW);
+  digitalWrite(ExtentPin, LOW);
+  digitalWrite(RetractPin, LOW);
 }
 
 void extendActuator() {
   // One direction: IN1 HIGH, IN2 LOW
-  digitalWrite(IN1_PIN, HIGH);
-  digitalWrite(IN2_PIN, LOW);
+  digitalWrite(ExtentPin, HIGH);
+  digitalWrite(RetractPin, LOW);
+  delay(ActuatorDuration);
+  digitalWrite(ExtentPin, LOW);
 }
 
 void retractActuator() {
   // Opposite direction: IN1 LOW, IN2 HIGH
-  digitalWrite(IN1_PIN, LOW);
-  digitalWrite(IN2_PIN, HIGH);
+  digitalWrite(ExtentPin, LOW);
+  digitalWrite(RetractPin, HIGH);
+  delay(ActuatorDuration);
+  digitalWrite(RetractPin, LOW);
 }
 
 void handleCommand(char cmd) {
   if (cmd == 'e' || cmd == 'E') {
     Serial.println("Extending for 1 second...");
     extendActuator();
-    delay(RUN_DURATION_MS);
+    delay(ActuatorDuration);
     stopActuator();
     Serial.println("Stopped.");
   } else if (cmd == 'r' || cmd == 'R') {
     Serial.println("Retracting for 1 second...");
     retractActuator();
-    delay(RUN_DURATION_MS);
+    delay(ActuatorDuration);
     stopActuator();
     Serial.println("Stopped.");
   } else if (cmd == 's' || cmd == 'S') {
@@ -54,8 +58,8 @@ void handleCommand(char cmd) {
 }
 
 void setup() {
-  pinMode(IN1_PIN, OUTPUT);
-  pinMode(IN2_PIN, OUTPUT);
+  pinMode(RetractPin, OUTPUT);
+  pinMode(ExtentPin, OUTPUT);
 
   stopActuator();
 
