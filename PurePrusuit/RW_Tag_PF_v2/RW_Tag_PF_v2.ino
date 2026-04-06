@@ -135,7 +135,7 @@ float leftMotor;
 float rightMotor; 
 // Linear Actuator and Pump condition
 float CleaningStage = 0; 
-float ActuatorDuration = 2900;  // in (ms)
+float ActuatorDuration = 4000;  // in (ms)
 
 // RoboClaw UART on Portenta C33: TX = pin 14, RX = pin 13
 UART controllerSerial(14, 13);

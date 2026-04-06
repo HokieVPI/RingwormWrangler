@@ -11,7 +11,7 @@ const int RetractPin = 6;
 const int ExtentPin = 7;
 
 // Duration (ms) to run the actuator per command
-float ActuatorDuration = 2900;
+float ActuatorDuration = 4000;
 // 2.9 sec
 void stopActuator() {
   // Brake / coast: both LOW (check datasheet; LOW/LOW is usually brake)
