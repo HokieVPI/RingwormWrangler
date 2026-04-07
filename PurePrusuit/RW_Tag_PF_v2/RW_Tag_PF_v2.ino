@@ -106,7 +106,7 @@ float tMin = tRobot+0.2f;
 // for wrestling room
 static constexpr int waypoint_radius = 150; // cm
 static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
-static constexpr float look_ahead=300.0f; // cm
+static constexpr float look_ahead=250.0f; // cm
 
 // for lab space
 // static constexpr int waypoint_radius = 50; // cm
@@ -174,31 +174,23 @@ struct GoalResult {
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
 
-static constexpr int PATH_LENGTH = 22;
+static constexpr int PATH_LENGTH = 11;
 static Waypoint path[PATH_LENGTH] = {
-  {245.0, 500.0},
-  {245.0, 2405.5},
-  {397.4, 2405.5},
-  {397.4, 245.0},
-  {549.8, 245.0},
-  {549.8, 2405.5},
-  {702.2, 2405.5},
-  {702.2, 245.0}, 
-  {854.6, 245.0}, 
-  {854.6, 2405.5},
-  {1007, 2405.5},
-  {1007, 245.0}, 
-  {1159.4, 245.0}, 
-  {1159.4, 2405.5},
-  {1311.8, 2405.5},
-  {1311.8, 245.0}, 
-  {1464.2, 245.0},
-  {1464.2, 1346.36},
-  {1616.6, 1346.36},
-  {1616.6, 245.0},
-  {300, 205.0},
-  {245.0, 500.0},
+  {300.0, 400.0},
+  {300.0, 2385.5},
+  {600.3, 2385.5},
+  {600.3, 300.0},
+  {935.6, 300.0},
+  {935.6, 2385.5},
+  {1270.8, 2385.5},
+  {1270.8, 300.0},
+  {700.0,300.0},
+  {450.0, 300.0},
+  {300.0, 400.0}
+
 };
+
+
 
 
   // // for wrestling room
@@ -252,11 +244,11 @@ static bool sprayOutputsActive() {
 
 void applySprayOutputs() {
   if (sprayOutputsActive()) {
-    digitalWrite(SolenoidPin, LOW);
-    digitalWrite(PumpPin, HIGH);
-  } else {
-    digitalWrite(PumpPin, LOW);
     digitalWrite(SolenoidPin, HIGH);
+    // digitalWrite(PumpPin, HIGH);
+  } else {
+    // digitalWrite(PumpPin, LOW);
+    digitalWrite(SolenoidPin, LOW);
   }
 }
 
