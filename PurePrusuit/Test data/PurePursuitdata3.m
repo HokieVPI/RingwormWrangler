@@ -446,13 +446,13 @@ hold off
 waypoints3_31_1 = [200 502.4;
               200 2252.4;
               442.5 2252.4;
-              442.5 200;
-              792.5 200;
+              442.5 500;
+              792.5 500;
               792.5 2252.4;
               1142.5 2252.4;
-              1142.5 200];
+              1142.5 500];
 
-raw = importdata("test_3_31_night11");
+raw = importdata("test_4_6_4");
 raw = raw.data;
 
 goalX = []; goalY = [];
@@ -481,8 +481,8 @@ scatter(currentX, currentY, 'filled')
 scatter(waypoints3_31_1(:,1), waypoints3_31_1(:,2), 100, 'm', 'filled')
 scatter(goalX, goalY, 25, 'g', 'filled')
 for k = 1:length(desiredHeading)
-    plot([currentX(k), currentX(k)+4*cos(desiredHeading(k)*(pi/180))], ...
-         [currentY(k), currentY(k)+4*sin(desiredHeading(k)*(pi/180))],'LineWidth',1)
+    plot([currentX(k), currentX(k)+10*cos(desiredHeading(k)*(pi/180))], ...
+         [currentY(k), currentY(k)+10*sin(desiredHeading(k)*(pi/180))],'LineWidth',1)
 end
 mapArea = [0 0;
     70*2.54*12 0;
