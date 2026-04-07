@@ -90,7 +90,7 @@ double volatile global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 0.1f; // cm 
+const float MinMovement = 1.0f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 static int staleCount = 0;
 const int MAX_STALE = 10;
@@ -145,7 +145,7 @@ UART controllerSerial(14, 13);
 
 static constexpr float ENCODER_CPR   = 24293.0f;
 static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
-uint32_t motor_accel = 20000;
+uint32_t motor_accel = 10000;
 
 Basicmicro controller(&controllerSerial, LIBRARY_READ_TIMEOUT);
 
@@ -643,8 +643,8 @@ void setup() {
 }
 
 void loop() {
-  // pinMode(RoboClawFusePin, OUTPUT);
-  // digitalWrite(2, HIGH);
+  pinMode(RoboClawFusePin, OUTPUT);
+  digitalWrite(RoboClawFusePin, HIGH);
   // digitalWrite(1, HIGH);
   // digitalWrite(0, HIGH);
   
@@ -692,14 +692,14 @@ delay(10);
 
   float angleToGoal = atan2f(delta_y, delta_x);
   // Serial.print("Goal xy: ");
-  // Serial.println(goal.gx);
-  // Serial.println(goal.gy);
+  Serial.println(goal.gx);
+  Serial.println(goal.gy);
   float DesiredHeading = radiansToDegrees(angleToGoal);
-  // Serial.println(DesiredHeading);
+  Serial.println(DesiredHeading);
   float azimuth_deg = radiansToDegrees(global_azimuth);
-  // Serial.println(azimuth_deg);
-  // Serial.println(currentX_global);
-  // Serial.println(currentY_global);
+  Serial.println(azimuth_deg);
+  Serial.println(currentX_global);
+  Serial.println(currentY_global);
 
   L_d2 = delta_x * delta_x + delta_y * delta_y;
   L_d = sqrtf(L_d2);
