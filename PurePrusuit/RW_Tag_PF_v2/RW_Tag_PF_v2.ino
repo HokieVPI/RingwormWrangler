@@ -104,9 +104,9 @@ float tRobot = 0.0f;
 float tMin = tRobot+0.2f;
 // waypoint constant
 // for wrestling room
-static constexpr int waypoint_radius = 100; // cm
+static constexpr int waypoint_radius = 150; // cm
 static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
-static constexpr float look_ahead=200.0f; // cm
+static constexpr float look_ahead=300.0f; // cm
 
 // for lab space
 // static constexpr int waypoint_radius = 50; // cm
@@ -173,14 +173,33 @@ struct GoalResult {
 };
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
-static constexpr int PATH_LENGTH = 34;
 
+static constexpr int PATH_LENGTH = 22;
 static Waypoint path[PATH_LENGTH] = {
-  {200, 502.4},{200, 852.4},{200, 1202.4},{200, 1552.4},{200, 1902.4},{200, 2252.4},
-  {442.5, 2252.4},{442.5, 1902.4},{442.5, 1552.4},{442.5, 1202.4},{442.5, 852.4},{442.5, 502.4}, {442.5, 500.0},
-  {792.5, 500.0},{792.5, 502.4},{792.5, 852.4},{792.5, 1202.4},{792.5, 1552.4},{792.5, 1902.4},{792.5, 2252.4},
-  {1142.5, 2252.4},{1142.5, 1902.4},{1142.5, 1552.4},{1142.5, 1202.4},{1142.5, 852.4},{1142.5, 502.4}, {1142.5, 500.0},
-  {1492.5, 500.0},{1492.5, 502.4},{1492.5, 852.4},{1492.5, 1202.4},{1492.5, 1552.4},{1492.5, 1902.4},{1492.5, 2252.4}};
+  {245.0, 500.0},
+  {245.0, 2405.5},
+  {397.4, 2405.5},
+  {397.4, 245.0},
+  {549.8, 245.0},
+  {549.8, 2405.5},
+  {702.2, 2405.5},
+  {702.2, 245.0}, 
+  {854.6, 245.0}, 
+  {854.6, 2405.5},
+  {1007, 2405.5},
+  {1007, 245.0}, 
+  {1159.4, 245.0}, 
+  {1159.4, 2405.5},
+  {1311.8, 2405.5},
+  {1311.8, 245.0}, 
+  {1464.2, 245.0},
+  {1464.2, 1346.36},
+  {1616.6, 1346.36},
+  {1616.6, 245.0},
+  {300, 205.0},
+  {245.0, 500.0},
+};
+
 
   // // for wrestling room
   // {200, 502.4},{200, 2252.4},
@@ -233,11 +252,11 @@ static bool sprayOutputsActive() {
 
 void applySprayOutputs() {
   if (sprayOutputsActive()) {
-    digitalWrite(SolenoidPin, HIGH);
+    digitalWrite(SolenoidPin, LOW);
     digitalWrite(PumpPin, HIGH);
   } else {
     digitalWrite(PumpPin, LOW);
-    digitalWrite(SolenoidPin, LOW);
+    digitalWrite(SolenoidPin, HIGH);
   }
 }
 
@@ -644,7 +663,12 @@ void setup() {
   pinMode(RetractPin, OUTPUT);
   pinMode(ExtentPin, OUTPUT);
   digitalWrite(PumpPin, LOW);
-  digitalWrite(SolenoidPin, LOW);
+  digitalWrite(SolenoidPin, HIGH);
+
+  // digitalWrite(ExtentPin, LOW); // to raise the mop 
+  // digitalWrite(RetractPin, HIGH);
+  // delay(ActuatorDuration);
+  // digitalWrite(RetractPin, LOW);
 }
 
 void loop() {
