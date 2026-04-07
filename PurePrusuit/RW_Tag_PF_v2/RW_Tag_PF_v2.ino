@@ -174,24 +174,18 @@ struct GoalResult {
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
 
-static constexpr int PATH_LENGTH = 11;
+static constexpr int PATH_LENGTH = 9;
 static Waypoint path[PATH_LENGTH] = {
-  {300.0, 400.0},
-  {300.0, 2385.5},
-  {600.3, 2385.5},
-  {600.3, 300.0},
-  {935.6, 300.0},
-  {935.6, 2385.5},
-  {1270.8, 2385.5},
-  {1270.8, 300.0},
-  {700.0,300.0},
-  {450.0, 300.0},
-  {300.0, 400.0}
-
+  {515.0, 515.0},
+  {515.0, 2135.5},
+  {636.9, 2135.5},
+  {636.9, 515.0},
+  {758.8, 515.0},
+  {758.8, 2135.5},
+  {880.8, 2135.5},
+  {880.8, 515.0},
+  {1002.7, 515.0},
 };
-
-
-
 
   // // for wrestling room
   // {200, 502.4},{200, 2252.4},
@@ -668,7 +662,6 @@ void loop() {
   digitalWrite(RoboClawFusePin, HIGH);
   // digitalWrite(1, HIGH);
   // digitalWrite(0, HIGH);
-  
   #if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));
@@ -677,6 +670,7 @@ delay(10);
   while (inRangingHandler || !newPosition) {
     delay(10);
   }
+
   // Serial.println(pathSegIdx);
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
