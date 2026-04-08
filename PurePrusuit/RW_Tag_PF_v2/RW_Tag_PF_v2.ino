@@ -106,7 +106,7 @@ float tMin = tRobot+0.2f;
 // for wrestling room
 static constexpr int waypoint_radius = 150; // cm
 static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
-static constexpr float look_ahead=250.0f; // cm
+static constexpr float look_ahead=175.0f; // cm
 
 // for lab space
 // static constexpr int waypoint_radius = 50; // cm
@@ -124,7 +124,7 @@ float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
 
 // for wrestling room
-const float velocity = 100.0f;  // Constant Velocity in cm/s
+const float velocity = 70.0f;  // Constant Velocity in cm/s
 
 // for lab space
 // const float velocity = 50.0f;  // Constant Velocity in cm/s
@@ -179,12 +179,12 @@ static Waypoint path[PATH_LENGTH] = {
   {315.0, 415.0},
   {315.0, 2335.5},
   {589.3, 2335.5},
-  {589.3, 415.0},
-  {863.6, 415.0},
+  {589.3, 315.0},
+  {863.6, 315.0},
   {863.6, 2335.5},
   {1138.0, 2335.5},
-  {1138.0, 415.0},
-  {726.5, 415.0},
+  {1138.0, 315.0},
+  {726.5, 315.0},
   {314.0, 415.0}
 };
 
@@ -695,6 +695,7 @@ delay(10);
       controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
                                    motor_accel, 0,
                                    motor_accel, 0);
+      Serial.end()
       // Serial.println("Path Complete");
       inRangingHandler = false;
       return;
@@ -716,6 +717,7 @@ delay(10);
   Serial.println(azimuth_deg);
   Serial.println(currentX_global);
   Serial.println(currentY_global);
+
 
   L_d2 = delta_x * delta_x + delta_y * delta_y;
   L_d = sqrtf(L_d2);
