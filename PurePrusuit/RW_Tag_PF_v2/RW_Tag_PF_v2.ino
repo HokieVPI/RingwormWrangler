@@ -136,6 +136,8 @@ float rightMotor;
 // Linear Actuator and Pump condition
 float CleaningStage = 0; 
 float ActuatorDuration = 4000;  // in (ms)
+float CurrentTime = 0;
+float SprayInterval = 1000;
 
 // RoboClaw UART on Portenta C33: TX = pin 14, RX = pin 13
 UART controllerSerial(14, 13);
@@ -244,7 +246,19 @@ static bool sprayOutputsActive() {
 void applySprayOutputs() {
   if (sprayOutputsActive()) {
     digitalWrite(SolenoidPin, LOW);
-    digitalWrite(PumpPin, HIGH);
+    if (CurrentTime == 0) {
+      CurrentTime = millis();
+      digitalWrite(PumpPin, HIGH);
+    } else if (millis() >= CurrentTime + SprayInterval) {
+      if (digitalRead(PumpPin) == HIGH){
+        digitalWrite(PumpPin, LOW);
+        CurrentTime = millis();
+      } else {
+        digitalWrite(PumpPin, HIGH);
+        CurrentTime = millis();
+      }
+    }
+    
   } else {
     digitalWrite(PumpPin, LOW);
     digitalWrite(SolenoidPin, HIGH);
@@ -643,7 +657,8 @@ void setup() {
 
   //start the session
   myController.start();
-
+  
+  
   controller.begin(38400);
   delay(100);
   controller.SetM1VelocityPID(MOTOR_ADDRESS, 1.79279, 0.27940, 0.00000, 70620);
@@ -685,9 +700,7 @@ delay(10);
     // Advance cleaning stage
     CleaningStage = CleaningStage + 1;
     // does pass again
-    controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                                motor_accel, 0,
-                                motor_accel, 0);
+    controller.SpeedAccelM1M2(MOTOR_ADDRESS, motor_accel, 0, 0);
     delay(3000);
     pathSegIdx = 0;
     
