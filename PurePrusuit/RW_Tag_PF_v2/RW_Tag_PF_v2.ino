@@ -176,7 +176,7 @@ struct GoalResult {
 
 static constexpr int PATH_LENGTH = 14;
 static Waypoint path[PATH_LENGTH] = {
-  {315.0, 315.0},
+  {315.0, 415.0},
   {315.0, 2405.5},
   {427.9, 2405.5},
   {427.9, 315.0},
@@ -189,7 +189,7 @@ static Waypoint path[PATH_LENGTH] = {
   {1159.4, 2405.5},
   {1159.4, 315.0},
   {737.0, 315.0},
-  {315.0, 315.0}
+  {315.0, 415.0}
 };
 
   // // for wrestling room
