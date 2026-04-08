@@ -695,7 +695,7 @@ delay(10);
       controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
                                    motor_accel, 0,
                                    motor_accel, 0);
-      Serial.end()
+      Serial.end();
       // Serial.println("Path Complete");
       inRangingHandler = false;
       return;
