@@ -239,11 +239,11 @@ static bool sprayOutputsActive() {
 
 void applySprayOutputs() {
   if (sprayOutputsActive()) {
-    digitalWrite(SolenoidPin, HIGH);
-    // digitalWrite(PumpPin, HIGH);
-  } else {
-    // digitalWrite(PumpPin, LOW);
     digitalWrite(SolenoidPin, LOW);
+    digitalWrite(PumpPin, HIGH);
+  } else {
+    digitalWrite(PumpPin, LOW);
+    digitalWrite(SolenoidPin, HIGH);
   }
 }
 
