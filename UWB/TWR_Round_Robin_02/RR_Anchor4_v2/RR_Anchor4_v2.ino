@@ -32,7 +32,6 @@ void rangingHandler(UWBRangingData &rangingData) {
 }
 
 void setup() {
-
   Serial.begin(115200);
 
 #if defined(ARDUINO_PORTENTA_C33)
@@ -74,6 +73,7 @@ void setup() {
 }
 
 void loop() {
+  Serial.println("Anchor 4");
 #if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));

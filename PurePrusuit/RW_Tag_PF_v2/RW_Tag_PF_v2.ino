@@ -671,7 +671,7 @@ void setup() {
   pinMode(RoboClawFusePin, OUTPUT);
   digitalWrite(RoboClawFusePin, HIGH);
   digitalWrite(PumpPin, LOW);
-  digitalWrite(SolenoidPin, HIGH);
+  // digitalWrite(SolenoidPin, HIGH);
 
   // digitalWrite(ExtentPin, LOW); // to raise the mop 
   // digitalWrite(RetractPin, HIGH);
@@ -694,7 +694,7 @@ delay(10);
   // Serial.println(pathSegIdx);
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
-  applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
+  // applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
   // digitalWrite(RoboClawFusePin, HIGH);
   if (PathComplete()) {
     // Advance cleaning stage
@@ -704,8 +704,8 @@ delay(10);
     delay(3000);
     pathSegIdx = 0;
     
-    SprayActive();
-    MopActive();
+    // SprayActive();
+    // MopActive();
     // Insert code to start path following again
     if (CleaningStage == 2) {
       // digitalWrite(RoboClawFusePin, LOW);
