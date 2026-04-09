@@ -90,7 +90,7 @@ double volatile global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 1.0f; // cm 
+const float MinMovement = 0.5f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 static int staleCount = 0;
 const int MAX_STALE = 10;
@@ -106,7 +106,7 @@ float tMin = tRobot+0.2f;
 // for wrestling room
 static constexpr int waypoint_radius = 150; // cm
 static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
-static constexpr float look_ahead=175.0f; // cm
+static constexpr float look_ahead=170.0f; // cm
 
 // for lab space
 // static constexpr int waypoint_radius = 50; // cm
@@ -176,23 +176,31 @@ struct GoalResult {
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
 
-static constexpr int PATH_LENGTH = 14;
+static constexpr int PATH_LENGTH = 20;
 static Waypoint path[PATH_LENGTH] = {
-  {315.0, 415.0},
-  {315.0, 2405.5},
-  {427.9, 2405.5},
-  {427.9, 315.0},
-  {610.8, 315.0},
-  {610.8, 2405.5},
-  {793.6, 2405.5},
-  {793.6, 315.0},
-  {976.5, 315.0},
-  {976.5, 2405.5},
-  {1159.4, 2405.5},
-  {1159.4, 315.0},
-  {737.0, 315.0},
-  {315.0, 415.0}
+  {250.0, 500.0},
+  {250.0, 2400.5},
+  {400.5, 2400.5},
+  {551.0, 2400.5},
+  {551.0, 250.0},
+  {701.5, 250.0},
+  {852.0, 250.0},
+  {852.0, 2400.5},
+  {1002.5, 2400.5},
+  {1153.0, 2400.5},
+  {1153.0, 250.0},
+  {1303.5, 250.0},
+  {1454.0, 250.0},
+  {1454.0, 1341.4},
+  {1604.5, 1341.4},
+  {1755.0, 1341.4},
+  {1755.0, 250.0},
+  {1002.5, 250.0},
+  {250.0, 250.0},
+  {250.0, 500.0}
 };
+
+
 
   // // for wrestling room
   // {200, 502.4},{200, 2252.4},
