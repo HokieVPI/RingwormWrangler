@@ -180,37 +180,38 @@ static constexpr int PATH_LENGTH = 32;
 static Waypoint path[PATH_LENGTH] = {
   {250.0, 500.0},
   {250.0, 2400.5},
-  {335.0, 2400.5},
-  {420.0, 2400.5},
-  {420.0, 250.0},
-  {505.0, 250.0},
-  {590.0, 250.0},
-  {590.0, 2400.5},
-  {675.0, 2400.5},
-  {760.0, 2400.5},
-  {760.0, 250.0},
-  {845.0, 250.0},
-  {930.0, 250.0},
-  {930.0, 2400.5},
-  {1015.0, 2400.5},
-  {1100.0, 2400.5},
-  {1100.0, 250.0},
-  {1185.0, 250.0},
-  {1270.0, 250.0},
-  {1270.0, 1790.9},
-  {1355.0, 1790.9},
-  {1440.0, 1790.9},
-  {1440.0, 250.0},
-  {1525.0, 250.0},
-  {1610.0, 250.0},
-  {1610.0, 1341.4},
-  {1695.0, 1341.4},
-  {1780.0, 1341.4},
-  {1780.0, 250.0},
-  {1015.0, 250.0},
+  {333.0, 2400.5},
+  {416.0, 2400.5},
+  {416.0, 350.0},
+  {499.0, 250.0},
+  {582.0, 250.0},
+  {582.0, 2400.5},
+  {665.0, 2400.5},
+  {748.0, 2400.5},
+  {748.0, 250.0},
+  {831.0, 250.0},
+  {914.0, 250.0},
+  {914.0, 2400.5},
+  {997.0, 2400.5},
+  {1080.0, 2400.5},
+  {1080.0, 250.0},
+  {1163.0, 250.0},
+  {1246.0, 250.0},
+  {1246.0, 1790.9},
+  {1329.0, 1790.9},
+  {1412.0, 1790.9},
+  {1412.0, 250.0},
+  {1495.0, 250.0},
+  {1578.0, 250.0},
+  {1578.0, 1341.4},
+  {1661.0, 1341.4},
+  {1744.0, 1341.4},
+  {1744.0, 250.0},
+  {997.0, 250.0},
   {250.0, 250.0},
   {250.0, 500.0}
 };
+
 
 
 
@@ -692,12 +693,12 @@ void setup() {
   pinMode(RoboClawFusePin, OUTPUT);
   digitalWrite(RoboClawFusePin, HIGH);
   digitalWrite(PumpPin, LOW);
-  // digitalWrite(SolenoidPin, HIGH);
+  digitalWrite(SolenoidPin, HIGH);
 
-  // digitalWrite(ExtentPin, LOW); // to raise the mop 
-  // digitalWrite(RetractPin, HIGH);
-  // delay(ActuatorDuration);
-  // digitalWrite(RetractPin, LOW);
+  digitalWrite(ExtentPin, LOW); // to raise the mop 
+  digitalWrite(RetractPin, HIGH);
+  delay(ActuatorDuration);
+  digitalWrite(RetractPin, LOW);
 }
 
 void loop() {
@@ -725,8 +726,8 @@ delay(10);
     delay(3000);
     pathSegIdx = 0;
     
-    // SprayActive();
-    // MopActive();
+    SprayActive();
+    MopActive();
     // Insert code to start path following again
     if (CleaningStage == 2) {
       // digitalWrite(RoboClawFusePin, LOW);
