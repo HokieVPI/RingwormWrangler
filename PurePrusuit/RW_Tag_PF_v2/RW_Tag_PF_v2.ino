@@ -176,29 +176,43 @@ struct GoalResult {
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
 
-static constexpr int PATH_LENGTH = 20;
+static constexpr int PATH_LENGTH = 32;
 static Waypoint path[PATH_LENGTH] = {
   {250.0, 500.0},
   {250.0, 2400.5},
-  {400.5, 2400.5},
-  {551.0, 2400.5},
-  {551.0, 250.0},
-  {701.5, 250.0},
-  {852.0, 250.0},
-  {852.0, 2400.5},
-  {1002.5, 2400.5},
-  {1153.0, 2400.5},
-  {1153.0, 250.0},
-  {1303.5, 250.0},
-  {1454.0, 250.0},
-  {1454.0, 1341.4},
-  {1604.5, 1341.4},
-  {1755.0, 1341.4},
-  {1755.0, 250.0},
-  {1002.5, 250.0},
+  {333.0, 2400.5},
+  {416.0, 2400.5},
+  {416.0, 350.0},
+  {499.0, 250.0},
+  {582.0, 250.0},
+  {582.0, 2400.5},
+  {665.0, 2400.5},
+  {748.0, 2400.5},
+  {748.0, 250.0},
+  {831.0, 250.0},
+  {914.0, 250.0},
+  {914.0, 2400.5},
+  {997.0, 2400.5},
+  {1080.0, 2400.5},
+  {1080.0, 250.0},
+  {1163.0, 250.0},
+  {1246.0, 250.0},
+  {1246.0, 1790.9},
+  {1329.0, 1790.9},
+  {1412.0, 1790.9},
+  {1412.0, 250.0},
+  {1495.0, 250.0},
+  {1578.0, 250.0},
+  {1578.0, 1341.4},
+  {1661.0, 1341.4},
+  {1744.0, 1341.4},
+  {1744.0, 250.0},
+  {997.0, 250.0},
   {250.0, 250.0},
   {250.0, 500.0}
 };
+
+
 
 
 
@@ -679,12 +693,12 @@ void setup() {
   pinMode(RoboClawFusePin, OUTPUT);
   digitalWrite(RoboClawFusePin, HIGH);
   digitalWrite(PumpPin, LOW);
-  // digitalWrite(SolenoidPin, HIGH);
+  digitalWrite(SolenoidPin, HIGH);
 
-  // digitalWrite(ExtentPin, LOW); // to raise the mop 
-  // digitalWrite(RetractPin, HIGH);
-  // delay(ActuatorDuration);
-  // digitalWrite(RetractPin, LOW);
+  digitalWrite(ExtentPin, LOW); // to raise the mop 
+  digitalWrite(RetractPin, HIGH);
+  delay(ActuatorDuration);
+  digitalWrite(RetractPin, LOW);
 }
 
 void loop() {
@@ -712,8 +726,8 @@ delay(10);
     delay(3000);
     pathSegIdx = 0;
     
-    // SprayActive();
-    // MopActive();
+    SprayActive();
+    MopActive();
     // Insert code to start path following again
     if (CleaningStage == 2) {
       // digitalWrite(RoboClawFusePin, LOW);

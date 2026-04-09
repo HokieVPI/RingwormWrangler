@@ -455,16 +455,25 @@ grid on
 hold off
 
 %% test_3_31_night12
-waypoints3_31_1 = [200 502.4;
-              200 2252.4;
-              442.5 2252.4;
-              442.5 500;
-              792.5 500;
-              792.5 2252.4;
-              1142.5 2252.4;
-              1142.5 500];
+% Waypoints match RW_Tag_PF_v2.ino path[] (PATH_LENGTH = 14), units cm
+path_cm = [
+    315.0,  415.0;
+    315.0, 2405.5;
+    427.9, 2405.5;
+    427.9,  315.0;
+    610.8,  315.0;
+    610.8, 2405.5;
+    793.6, 2405.5;
+    793.6,  315.0;
+    976.5,  315.0;
+    976.5, 2405.5;
+    1159.4, 2405.5;
+    1159.4,  315.0;
+    737.0,  315.0;
+    315.0,  415.0
+];
 
-raw = importdata("test_4_6_3");
+raw = importdata("test_4_7_2");
 raw = raw.data;
 
 goalX = []; goalY = [];
@@ -490,7 +499,7 @@ goalX = goalX(valid); goalY = goalY(valid);
 figure
 hold on
 scatter(currentX, currentY, 'filled')
-scatter(waypoints3_31_1(:,1), waypoints3_31_1(:,2), 100, 'm', 'filled')
+scatter(path_cm(:,1), path_cm(:,2), 100, 'm', 'filled')
 scatter(goalX, goalY, 25, 'g', 'filled')
 for k = 1:length(desiredHeading)
     plot([currentX(k), currentX(k)+10*cos(desiredHeading(k)*(pi/180))], ...
@@ -508,7 +517,7 @@ mapArea = [0 0;
     0 (32.4+19.81+14.75+20)*2.54*12;
     0 0];
 plot(mapArea(:,1),mapArea(:,2))
-title("Pure Pursuit X-Y Position")
+title("Pure Pursuit X-Y Position - test\_3\_31\_night12")
 xlabel("x position (cm)")
 ylabel("y position (cm)")
 legend("Robot Position", "Waypoints", "Goal Points")

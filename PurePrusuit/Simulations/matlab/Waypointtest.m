@@ -1,6 +1,6 @@
 clc;
 clear;
-close all
+close all; 
 %Sweep Space: 6
 %Inflation: 230
 waypoints4 = [
