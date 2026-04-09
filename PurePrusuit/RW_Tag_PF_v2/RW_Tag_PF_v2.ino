@@ -12,8 +12,8 @@ const int SolenoidFusePin = 2;
 const int PumpFusePin = 1;
 const int UltraSonicTriggerPin = 11;
 const int UltraSonicEchoPin = 12;
-const int S1Pin = 13; // S1
-const int S2Pin = 14; // S2
+// const int S1Pin = 13; // S1 used for roboclaw 
+// const int S2Pin = 14; // S2
 
 
 
@@ -668,6 +668,8 @@ void setup() {
   pinMode(SolenoidPin, OUTPUT);
   pinMode(RetractPin, OUTPUT);
   pinMode(ExtentPin, OUTPUT);
+  pinMode(RoboClawFusePin, OUTPUT);
+  digitalWrite(RoboClawFusePin, HIGH);
   digitalWrite(PumpPin, LOW);
   digitalWrite(SolenoidPin, HIGH);
 
@@ -678,8 +680,6 @@ void setup() {
 }
 
 void loop() {
-  pinMode(RoboClawFusePin, OUTPUT);
-  digitalWrite(RoboClawFusePin, HIGH);
   // digitalWrite(1, HIGH);
   // digitalWrite(0, HIGH);
   #if defined(ARDUINO_PORTENTA_C33)
@@ -713,7 +713,10 @@ delay(10);
                                    motor_accel, 0,
                                    motor_accel, 0);
       Serial.end();
-      // Serial.println("Path Complete");
+      while (true) {
+        delay(1000);
+      }
+      Serial.println("Path Complete");
       inRangingHandler = false;
       return;
     }
