@@ -36,7 +36,7 @@ path_cm = [
     250.0,  500.0
 ];
 
-raw = importdata("test_4_10_1");
+raw = importdata("test_4_10_3");
 raw = raw.data;
 
 goalX = []; goalY = [];
