@@ -299,10 +299,15 @@ void MopActive() {
     digitalWrite(ExtentPin, LOW);
 
   } else if (CleaningStage == 2) {
-    digitalWrite(ExtentPin, LOW);
-    digitalWrite(RetractPin, HIGH);
-    delay(ActuatorDuration);
+    // digitalWrite(ExtentPin, LOW);
+    // digitalWrite(RetractPin, HIGH);
+    // delay(ActuatorDuration);
+    // digitalWrite(RetractPin, LOW);
+    // // this is temporary fix for bad port 6 connection for retracting
+    digitalWrite(ExtentPin, HIGH);
     digitalWrite(RetractPin, LOW);
+    delay(ActuatorDuration);
+    digitalWrite(ExtentPin, LOW);
 
   } else {
     digitalWrite(ExtentPin, LOW);
