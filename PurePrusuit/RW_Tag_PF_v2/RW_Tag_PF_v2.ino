@@ -98,7 +98,6 @@ float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
 float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
 int head_index = 0;
 int tail_index = CIRCULAR_BUFFER_SIZE-1;
-volatile bool inRangingHandler = false;
 // pure pursuit variables & constants 
 float tRobot = 0.0f;
 float tMin = tRobot+0.2f;
@@ -114,7 +113,6 @@ static constexpr float look_ahead=170.0f; // cm
 // static constexpr float look_ahead=100.0f; // cm
 
 
-static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
@@ -626,8 +624,8 @@ void driveMotors(float leftRadPerSec, float rightRadPerSec) {
   int32_t leftCounts  = constrain((int32_t)(leftRadPerSec  * RAD_TO_COUNTS), -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
   int32_t rightCounts = constrain((int32_t)(rightRadPerSec * RAD_TO_COUNTS), -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
   controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
-                               motor_accel, (uint32_t)rightCounts,
-                               motor_accel, (uint32_t)leftCounts);
+                               motor_accel, rightCounts,
+                               motor_accel, leftCounts);
 }
 
 // Trilateration using Cramer's rule on any 3 anchors (indices into anchorX/Y arrays).
@@ -665,7 +663,6 @@ static const AnchorCombo combos[4] = {
 
 // handler for ranging notifications
 void rangingHandler(UWBRangingData &rangingData) {
-  inRangingHandler = true;
   if(rangingData.measureType()==(uint8_t)uwb::MeasurementType::TWO_WAY)
   {
 
@@ -722,7 +719,6 @@ void rangingHandler(UWBRangingData &rangingData) {
   anchor4_received = false;
 
   if (nValid < 3) {
-    inRangingHandler = false;
     return;
   }
 
@@ -739,7 +735,6 @@ void rangingHandler(UWBRangingData &rangingData) {
   }
 
   if (!solved) {
-    inRangingHandler = false;
     return;
   }
 
@@ -750,9 +745,6 @@ void rangingHandler(UWBRangingData &rangingData) {
   latestUwb.fresh = true;
   latestUwb.valid = true;
   interrupts();
-}
-
-  inRangingHandler = false;
 }
 
 void setup() {
@@ -884,11 +876,7 @@ void loop() {
       while (true) {
         delay(1000);
       }
-      Serial.println("Path Complete");
-      inRangingHandler = false;
-      return;
     }
-  }
 
   GoalResult goal = findLookaheadGoal();
 
@@ -912,11 +900,9 @@ void loop() {
 
   float alpha = wrapAnglePi(angleToGoal - global_azimuth);
 
-  float absAlpha = fabsf(alpha);
   // float speedScale = 0.5f;
-  // if (absAlpha > PI / 4.0f) {
-  //   speedScale = (PI - absAlpha) / PI;
-  //   if (speedScale < MIN_SPEED_SCALE) speedScale = MIN_SPEED_SCALE;
+  // if (fabsf(alpha) > PI / 4.0f) {
+  //   speedScale = (PI - fabsf(alpha)) / PI;
   // }
    float cmdVelocity = velocity;
 
