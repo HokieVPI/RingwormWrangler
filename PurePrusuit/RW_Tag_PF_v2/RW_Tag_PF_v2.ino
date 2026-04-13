@@ -148,6 +148,46 @@ UART controllerSerial(14, 13);
 static constexpr float ENCODER_CPR   = 24293.0f;
 static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
 uint32_t motor_accel = 10000;
+static constexpr float EKF_DT_S = 0.1f;                 // 10 Hz loop
+static constexpr uint32_t EKF_DT_MS = 100;
+static constexpr float EKF_QX_BASE = 4.0f;              // cm^2 / step
+static constexpr float EKF_QY_BASE = 4.0f;              // cm^2 / step
+static constexpr float EKF_QTH_BASE = 0.0030f;          // rad^2 / step
+static constexpr float EKF_RX = 144.0f;                 // cm^2
+static constexpr float EKF_RY = 144.0f;                 // cm^2
+static constexpr float EKF_NIS_GATE = 9.21f;
+static constexpr uint32_t UWB_STALE_MS = 500;
+static constexpr uint32_t UWB_Q_SCALE_15_MS = 2000;
+static constexpr uint32_t UWB_Q_SCALE_20_MS = 5000;
+static constexpr float MAX_THETA_CORR_RAD = 8.0f * PI / 180.0f;
+
+struct EKFState {
+  float x;
+  float y;
+  float theta;
+};
+
+struct UWBMeasurement {
+  float x;
+  float y;
+  uint32_t timestampMs;
+  bool fresh;
+  bool valid;
+};
+
+static EKFState ekf = {0.0f, 0.0f, 0.0f};
+static float P[3][3] = {
+  {400.0f, 0.0f, 0.0f},
+  {0.0f, 400.0f, 0.0f},
+  {0.0f, 0.0f, 0.25f}
+};
+static volatile UWBMeasurement latestUwb = {0.0f, 0.0f, 0, false, false};
+static bool ekfInitialized = false;
+static uint32_t lastAcceptedUwbMs = 0;
+static uint32_t lastControlTickMs = 0;
+static bool encoderInitialized = false;
+static uint32_t prevEncM1 = 0;
+static uint32_t prevEncM2 = 0;
 
 Basicmicro controller(&controllerSerial, LIBRARY_READ_TIMEOUT);
 
@@ -408,6 +448,179 @@ float radiansToDegrees(float a) {
   return a * (180.0/PI);
 }
 
+static void setCovariance(float pxx, float pyy, float ptt) {
+  P[0][0] = pxx; P[0][1] = 0.0f; P[0][2] = 0.0f;
+  P[1][0] = 0.0f; P[1][1] = pyy; P[1][2] = 0.0f;
+  P[2][0] = 0.0f; P[2][1] = 0.0f; P[2][2] = ptt;
+}
+
+static float initialPathHeading() {
+  if (PATH_LENGTH < 2) return 0.0f;
+  float dx = path[1].wp_x - path[0].wp_x;
+  float dy = path[1].wp_y - path[0].wp_y;
+  return atan2f(dy, dx);
+}
+
+static bool isUwbStale(uint32_t nowMs, uint32_t measMs) {
+  return (nowMs - measMs) > UWB_STALE_MS;
+}
+
+static float processQScale(uint32_t nowMs) {
+  uint32_t sinceAccepted = nowMs - lastAcceptedUwbMs;
+  if (sinceAccepted > UWB_Q_SCALE_20_MS) return 2.0f;
+  if (sinceAccepted > UWB_Q_SCALE_15_MS) return 1.5f;
+  return 1.0f;
+}
+
+static void predictFromEncoders(uint32_t nowMs) {
+  uint8_t s1 = 0, s2 = 0;
+  bool validM1 = false, validM2 = false;
+  uint32_t encM1 = controller.ReadEncM1(MOTOR_ADDRESS, &s1, &validM1); // right
+  uint32_t encM2 = controller.ReadEncM2(MOTOR_ADDRESS, &s2, &validM2); // left
+  if (!validM1 || !validM2) return;
+
+  if (!encoderInitialized) {
+    prevEncM1 = encM1;
+    prevEncM2 = encM2;
+    encoderInitialized = true;
+    return;
+  }
+
+  int32_t dCountR = (int32_t)(encM1 - prevEncM1); // M1 is right
+  int32_t dCountL = (int32_t)(encM2 - prevEncM2); // M2 is left
+  prevEncM1 = encM1;
+  prevEncM2 = encM2;
+
+  float dPhiR = (2.0f * PI) * ((float)dCountR / ENCODER_CPR);
+  float dPhiL = (2.0f * PI) * ((float)dCountL / ENCODER_CPR);
+  float dR = wheelRadius * dPhiR;
+  float dL = wheelRadius * dPhiL;
+  float dS = 0.5f * (dR + dL);
+  float dTheta = (dR - dL) / trackWidth;
+  float midHeading = ekf.theta + 0.5f * dTheta;
+
+  ekf.x += dS * cosf(midHeading);
+  ekf.y += dS * sinf(midHeading);
+  ekf.theta = wrapAnglePi(ekf.theta + dTheta);
+
+  float F[3][3] = {
+    {1.0f, 0.0f, -dS * sinf(midHeading)},
+    {0.0f, 1.0f,  dS * cosf(midHeading)},
+    {0.0f, 0.0f, 1.0f}
+  };
+  float FP[3][3] = {{0}};
+  float FPFt[3][3] = {{0}};
+  for (int r = 0; r < 3; r++) {
+    for (int c = 0; c < 3; c++) {
+      for (int k = 0; k < 3; k++) {
+        FP[r][c] += F[r][k] * P[k][c];
+      }
+    }
+  }
+  for (int r = 0; r < 3; r++) {
+    for (int c = 0; c < 3; c++) {
+      for (int k = 0; k < 3; k++) {
+        FPFt[r][c] += FP[r][k] * F[c][k];
+      }
+    }
+  }
+  float qScale = processQScale(nowMs);
+  float Q[3] = {EKF_QX_BASE * qScale, EKF_QY_BASE * qScale, EKF_QTH_BASE * qScale};
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      P[i][j] = FPFt[i][j];
+    }
+  }
+  P[0][0] += Q[0];
+  P[1][1] += Q[1];
+  P[2][2] += Q[2];
+}
+
+static bool tryUpdateFromUWB(uint32_t nowMs) {
+  noInterrupts();
+  UWBMeasurement m = latestUwb;
+  if (m.fresh) {
+    latestUwb.fresh = false;
+  }
+  interrupts();
+  if (!m.fresh || !m.valid || isUwbStale(nowMs, m.timestampMs)) return false;
+
+  float innov[2] = {m.x - ekf.x, m.y - ekf.y};
+  float S00 = P[0][0] + EKF_RX;
+  float S01 = P[0][1];
+  float S10 = P[1][0];
+  float S11 = P[1][1] + EKF_RY;
+  float detS = S00 * S11 - S01 * S10;
+  if (fabsf(detS) < 1e-6f) return false;
+
+  float iS00 =  S11 / detS;
+  float iS01 = -S01 / detS;
+  float iS10 = -S10 / detS;
+  float iS11 =  S00 / detS;
+  float nis = innov[0] * (iS00 * innov[0] + iS01 * innov[1]) +
+              innov[1] * (iS10 * innov[0] + iS11 * innov[1]);
+  if (nis > EKF_NIS_GATE) return false;
+
+  float K[3][2];
+  K[0][0] = P[0][0] * iS00 + P[0][1] * iS10;
+  K[0][1] = P[0][0] * iS01 + P[0][1] * iS11;
+  K[1][0] = P[1][0] * iS00 + P[1][1] * iS10;
+  K[1][1] = P[1][0] * iS01 + P[1][1] * iS11;
+  K[2][0] = P[2][0] * iS00 + P[2][1] * iS10;
+  K[2][1] = P[2][0] * iS01 + P[2][1] * iS11;
+
+  float prevTheta = ekf.theta;
+  ekf.x += K[0][0] * innov[0] + K[0][1] * innov[1];
+  ekf.y += K[1][0] * innov[0] + K[1][1] * innov[1];
+  ekf.theta += K[2][0] * innov[0] + K[2][1] * innov[1];
+  float dThetaCorr = wrapAnglePi(ekf.theta - prevTheta);
+  dThetaCorr = constrain(dThetaCorr, -MAX_THETA_CORR_RAD, MAX_THETA_CORR_RAD);
+  ekf.theta = wrapAnglePi(prevTheta + dThetaCorr);
+
+  float KH[3][3] = {
+    {K[0][0], K[0][1], 0.0f},
+    {K[1][0], K[1][1], 0.0f},
+    {K[2][0], K[2][1], 0.0f}
+  };
+  float IminusKH[3][3] = {
+    {1.0f - KH[0][0], -KH[0][1], 0.0f},
+    {-KH[1][0], 1.0f - KH[1][1], 0.0f},
+    {-KH[2][0], -KH[2][1], 1.0f}
+  };
+  float newP[3][3] = {{0}};
+  for (int r = 0; r < 3; r++) {
+    for (int c = 0; c < 3; c++) {
+      for (int k = 0; k < 3; k++) {
+        newP[r][c] += IminusKH[r][k] * P[k][c];
+      }
+    }
+  }
+  for (int r = 0; r < 3; r++) {
+    for (int c = 0; c < 3; c++) {
+      P[r][c] = newP[r][c];
+    }
+  }
+  lastAcceptedUwbMs = nowMs;
+  return true;
+}
+
+static bool tryInitializeFromUwb(uint32_t nowMs) {
+  noInterrupts();
+  UWBMeasurement m = latestUwb;
+  if (m.fresh) {
+    latestUwb.fresh = false;
+  }
+  interrupts();
+  if (!m.fresh || !m.valid || isUwbStale(nowMs, m.timestampMs)) return false;
+  ekf.x = m.x;
+  ekf.y = m.y;
+  ekf.theta = initialPathHeading();
+  setCovariance(400.0f, 400.0f, 0.25f);
+  ekfInitialized = true;
+  lastAcceptedUwbMs = nowMs;
+  return true;
+}
+
 void driveMotors(float leftRadPerSec, float rightRadPerSec) {
   const int32_t MAX_MOTOR_COUNTS = 70000;
   int32_t leftCounts  = constrain((int32_t)(leftRadPerSec  * RAD_TO_COUNTS), -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
@@ -530,100 +743,13 @@ void rangingHandler(UWBRangingData &rangingData) {
     return;
   }
 
-// Serial.println(x);
-// Serial.println(y);
-  if(!prev_valid) {
-    for(int i = 0; i < CIRCULAR_BUFFER_SIZE; i++) {
-      x_circular_buffer[i] = x;
-      y_circular_buffer[i] = y;
-    }
-    prev_valid = true;
-    inRangingHandler = false;
-    return;
-  }
-// ------------ Circular Buffer Advance ------------ //
-// Advance Circular Buffer 
-  head_index++;
-  if (head_index == CIRCULAR_BUFFER_SIZE) {
-    head_index = 0;
-  }
-  tail_index++;
-  if (tail_index == CIRCULAR_BUFFER_SIZE) {
-    tail_index = 0;
-  }
-  x_circular_buffer[head_index] = x;
-  y_circular_buffer[head_index] = y;
-// ------------ End Circular Buffer Advance ------------ //
-
-
-float currentX=0.0f;
-float currentY=0.0f;
-float prevX=0.0f;
-float prevY=0.0f;
-// ------------ Weighted Average ------------ //
-  float weights[HALF_CIRCULAR_BUFFER_SIZE];
-  for (int i = 0; i < HALF_CIRCULAR_BUFFER_SIZE; i++) {
-    weights[i] = 1.0f/HALF_CIRCULAR_BUFFER_SIZE;
-  }
-   weights[0] = 0.3;
-   weights[1] = 0.25;
-   weights[2] = 0.2;
-   weights[3] = 0.15;
-   weights[4] = 0.1;
-  int index = head_index;
-
-  for (int i = 0; i < HALF_CIRCULAR_BUFFER_SIZE; i++) {
-    if (index < 0) {
-      index = index + CIRCULAR_BUFFER_SIZE;
-    }
-    currentX += weights[i]*x_circular_buffer[index];
-    currentY += weights[i]*y_circular_buffer[index];
-    index--;
-  }
-
-  index = tail_index;
-  for (int i = 0; i < HALF_CIRCULAR_BUFFER_SIZE; i++) {
-    if (index >= CIRCULAR_BUFFER_SIZE) {
-      index = index - CIRCULAR_BUFFER_SIZE;
-    }
-    prevX += weights[i]*x_circular_buffer[index];
-    prevY += weights[i]*y_circular_buffer[index];
-    index++;
-  }
-    currentX_global = currentX;
-    currentY_global = currentY; 
-  // Serial.print("( ");
-  // Serial.println(currentX_global);
-  // Serial.print(" , ");
-  // Serial.println(currentY_global);
-  // Serial.print(") ");
-// ------------ End Weighted Average ------------ //
-
-// ------------ Heading Calculation ------------ //
-// Calculate the differnce in position from previous point  
-  float dx = currentX - prevX;
-  float dy = currentY - prevY;
-// Compare the dx^2+dy^2 to the distance to flag invalid headings
-  float dist_sq = dx*dx + dy*dy;
-
-
-// If the distance is greater than the minimum movement, calculate the azimuth
-  if (dist_sq >= minMovement_sq) {
-    Azimuth = atan2f(dy, dx);
-    global_azimuth = Azimuth;
-    staleCount = 0;
-  }else{
-    // Serial.print("min move  ");
-    staleCount++;
-    if(staleCount >= MAX_STALE) {
-      float minDrive = 0.5f * velocity / wheelRadius;
-      driveMotors(-minDrive, -minDrive);
-    }
-
-  }
-
-  newPosition = true;
-// ------------ End Heading Calculation ------------ //
+  noInterrupts();
+  latestUwb.x = x;
+  latestUwb.y = y;
+  latestUwb.timestampMs = millis();
+  latestUwb.fresh = true;
+  latestUwb.valid = true;
+  interrupts();
 }
 
   inRangingHandler = false;
@@ -704,22 +830,37 @@ void setup() {
   digitalWrite(RetractPin, HIGH);
   delay(ActuatorDuration);
   digitalWrite(RetractPin, LOW);
+
+  lastControlTickMs = millis();
+  lastAcceptedUwbMs = lastControlTickMs;
 }
 
 void loop() {
-  // digitalWrite(1, HIGH);
-  // digitalWrite(0, HIGH);
-  #if defined(ARDUINO_PORTENTA_C33)
+  uint32_t now = millis();
+  if ((now - lastControlTickMs) < EKF_DT_MS) {
+    return;
+  }
+  lastControlTickMs += EKF_DT_MS;
+
+#if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
-delay(10);
-  while (inRangingHandler || !newPosition) {
-    delay(10);
+
+  if (!ekfInitialized) {
+    if (!tryInitializeFromUwb(now)) {
+      driveMotors(0.0f, 0.0f);
+      return;
+    }
   }
 
-  // Serial.println(pathSegIdx);
-  newPosition = false;  // consumed; wait for next update before next iteration
+  predictFromEncoders(now);
+  tryUpdateFromUWB(now);
+
+  currentX_global = ekf.x;
+  currentY_global = ekf.y;
+  global_azimuth = ekf.theta;
+
   AdvancePathSegment(); // check if we reached the next waypoint
   // applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
   // digitalWrite(RoboClawFusePin, HIGH);
