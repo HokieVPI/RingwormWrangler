@@ -6,6 +6,20 @@
 #define PI 3.14159265358979323846f
 #endif
 
+// placing other pins here
+const int RoboClawFusePin = 3;
+const int SolenoidFusePin = 2;
+const int PumpFusePin = 1;
+const int UltraSonicTriggerPin = 11;
+const int UltraSonicEchoPin = 12;
+// const int S1Pin = 13; // S1 used for roboclaw 
+// const int S2Pin = 14; // S2
+
+
+
+// orange, blue, white, green
+// 0, 1, 2, 4
+
 
 /**
  * pure pursuit path following algorithm for a single tag
@@ -30,16 +44,20 @@ const float Anchor3_y=1125.32; // cm 36.92 ft
 const float Anchor4_x=819.91; // cm  
 const float Anchor4_y=2654.19; // cm 
 
+
+
+// const float Anchor1_x=0;// cm 
+// const float Anchor1_y=0; // cm 
+// const float Anchor2_x=722; // cm 
+// const float Anchor2_y=0; // cm 
+// const float Anchor3_x=722; // cm 
+// const float Anchor3_y=445; // cm 
+// const float Anchor4_x=0; // cm  
+// const float Anchor4_y=707; // cm 
+
 static constexpr int NUM_ANCHORS = 4;
 const float anchorX[NUM_ANCHORS] = {Anchor1_x, Anchor2_x, Anchor3_x, Anchor4_x};
 const float anchorY[NUM_ANCHORS] = {Anchor1_y, Anchor2_y, Anchor3_y, Anchor4_y};
-
-// const float Anchor1_x=0;// cm 
-// const float Anchor1_y=617.22; // cm 
-// const float Anchor2_x=1280.16; // cm 
-// const float Anchor2_y=0; // cm 
-// const float Anchor3_x=1708.41; // cm 
-// const float Anchor3_y=1570.03; // cm 
 
 // const float Anchor1_x=0;// cm 
 // const float Anchor1_y=0; // cm 
@@ -72,7 +90,7 @@ double volatile global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 0.1f; // cm 
+const float MinMovement = 0.5f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 static int staleCount = 0;
 const int MAX_STALE = 10;
@@ -85,9 +103,17 @@ volatile bool inRangingHandler = false;
 float tRobot = 0.0f;
 float tMin = tRobot+0.2f;
 // waypoint constant
-static constexpr int waypoint_radius = 100; // cm
+// for wrestling room
+static constexpr int waypoint_radius = 150; // cm
 static constexpr int final_waypoint_radius = 200; // cm (larger radius only for final waypoint)
-static constexpr float look_ahead=200.0f; // cm
+static constexpr float look_ahead=170.0f; // cm
+
+// for lab space
+// static constexpr int waypoint_radius = 50; // cm
+// static constexpr int final_waypoint_radius = 100; // cm (larger radius only for final waypoint)
+// static constexpr float look_ahead=100.0f; // cm
+
+
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
@@ -96,11 +122,22 @@ float L_d; // Look-Ahead Distance in cm
 float L_d2; // Look-Ahead Distance squared 
 float K; // Curvature Coeff (K)
 float omega; // Rotational Velocity in rad/s
-const float velocity = 100.0f;  // Constant Velocity in cm/s
+
+// for wrestling room
+const float velocity = 70.0f;  // Constant Velocity in cm/s
+
+// for lab space
+// const float velocity = 50.0f;  // Constant Velocity in cm/s
+
 static constexpr float wheelRadius = 15.24f;  //cm 
 static constexpr float trackWidth =43.18f;  // Wheel to Wheel in cm 
 float leftMotor; 
 float rightMotor; 
+// Linear Actuator and Pump condition
+float CleaningStage = 0; 
+float ActuatorDuration = 4000;  // in (ms)
+float CurrentTime = 0;
+float SprayInterval = 1000;
 
 // RoboClaw UART on Portenta C33: TX = pin 14, RX = pin 13
 UART controllerSerial(14, 13);
@@ -108,11 +145,18 @@ UART controllerSerial(14, 13);
 #define MOTOR_ADDRESS        128
 #define LIBRARY_READ_TIMEOUT 10000
 
-static constexpr float ENCODER_CPR   = -24293.0f;
+static constexpr float ENCODER_CPR   = 24293.0f;
 static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
-uint32_t motor_accel = 20000;
+uint32_t motor_accel = 10000;
 
 Basicmicro controller(&controllerSerial, LIBRARY_READ_TIMEOUT);
+
+// Linear Actuator Motor Controller: Retract = pin 6, Extend = pin 7
+
+const int RetractPin = 6;
+const int ExtentPin = 7;
+const int PumpPin = 1; // orange
+const int SolenoidPin = 2; // green
 
 // ----------- Functions----------//
 
@@ -131,13 +175,61 @@ struct GoalResult {
 };
 //  establish path length and waypoints
 //  {950,400},{950,800},{1300,800},{1300,500}
-static constexpr int PATH_LENGTH = 8;
 
+static constexpr int PATH_LENGTH = 32;
 static Waypoint path[PATH_LENGTH] = {
-  {200, 502.4},{200, 2252.4},
-  {442.5, 2252.4}, {442.5, 200},
-  {792.5, 200},{792.5, 2252.4},
-  {1142.5, 2252.4}, {1142.5, 200}};
+  {250.0, 500.0},
+  {250.0, 2400.5},
+  {333.0, 2400.5},
+  {416.0, 2400.5},
+  {416.0, 350.0},
+  {499.0, 250.0},
+  {582.0, 250.0},
+  {582.0, 2400.5},
+  {665.0, 2400.5},
+  {748.0, 2400.5},
+  {748.0, 250.0},
+  {831.0, 250.0},
+  {914.0, 250.0},
+  {914.0, 2400.5},
+  {997.0, 2400.5},
+  {1080.0, 2400.5},
+  {1080.0, 250.0},
+  {1163.0, 250.0},
+  {1246.0, 250.0},
+  {1246.0, 1890.9},
+  {1329.0, 1890.9},
+  {1412.0, 1890.9},
+  {1412.0, 250.0},
+  {1495.0, 250.0},
+  {1578.0, 250.0},
+  {1578.0, 1341.4},
+  {1661.0, 1341.4},
+  {1744.0, 1341.4},
+  {1744.0, 250.0},
+  {997.0, 250.0},
+  {250.0, 250.0},
+  {250.0, 500.0}
+};
+
+
+
+
+
+  // // for wrestling room
+  // {200, 502.4},{200, 2252.4},
+  // {442.5, 2252.4}, {442.5, 200},
+  // {792.5, 200},{792.5, 2252.4},
+  // {1142.5, 2252.4}, {1142.5, 200}
+
+  // for lab space
+    //  {240, 146},
+    //  {240, 386},
+    //  {452, 386},
+    //  {452, 146},
+    //  {240, 146},
+
+  // for 
 // functions to get waypoint x and y coordinates and path length
 float getWaypointX(int j){
   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
@@ -166,6 +258,65 @@ bool PathComplete(){
    pathSegIdx == PATH_LENGTH - 1;
 }
 
+
+// Pump on + solenoid off pressurizes bladder while spray-active (no timers).
+// After PathComplete(), CleaningStage is incremented before SprayActive(); stage 1 is the first cleaning phase.
+static bool sprayOutputsActive() {
+  return CleaningStage == 0;
+}
+
+void applySprayOutputs() {
+  if (sprayOutputsActive()) {
+    digitalWrite(SolenoidPin, LOW);
+    if (CurrentTime == 0) {
+      CurrentTime = millis();
+      digitalWrite(PumpPin, HIGH);
+    } else if (millis() >= CurrentTime + SprayInterval) {
+      if (digitalRead(PumpPin) == HIGH){
+        digitalWrite(PumpPin, LOW);
+        CurrentTime = millis();
+      } else {
+        digitalWrite(PumpPin, HIGH);
+        CurrentTime = millis();
+      }
+    }
+    
+  } else {
+    digitalWrite(PumpPin, LOW);
+    digitalWrite(SolenoidPin, HIGH);
+  }
+}
+
+void SprayActive() {
+  applySprayOutputs();
+}
+
+void MopActive() {
+  if (CleaningStage == 1) {
+    digitalWrite(ExtentPin, HIGH);
+    digitalWrite(RetractPin, LOW);
+    delay(ActuatorDuration);
+    digitalWrite(ExtentPin, LOW);
+
+  } else if (CleaningStage == 2) {
+    // digitalWrite(ExtentPin, LOW);
+    // digitalWrite(RetractPin, HIGH);
+    // delay(ActuatorDuration);
+    // digitalWrite(RetractPin, LOW);
+    // // this is temporary fix for bad port 6 connection for retracting
+    digitalWrite(ExtentPin, HIGH);
+    digitalWrite(RetractPin, LOW);
+    delay(ActuatorDuration);
+    digitalWrite(ExtentPin, LOW);
+
+  } else {
+    digitalWrite(ExtentPin, LOW);
+    digitalWrite(RetractPin, LOW);
+  }
+}
+
+
+// advance when the tag is within the waypoint radius of the next waypoint
 void AdvancePathSegment(){
   if(!PathComplete()){
 
@@ -533,15 +684,31 @@ void setup() {
 
   //start the session
   myController.start();
-
+  
+  
   controller.begin(38400);
   delay(100);
   controller.SetM1VelocityPID(MOTOR_ADDRESS, 1.79279, 0.27940, 0.00000, 70620);
   controller.SetM2VelocityPID(MOTOR_ADDRESS, 1.74675, 0.26201, 0.00000, 69630);
 
+  pinMode(PumpPin, OUTPUT);
+  pinMode(SolenoidPin, OUTPUT);
+  pinMode(RetractPin, OUTPUT);
+  pinMode(ExtentPin, OUTPUT);
+  pinMode(RoboClawFusePin, OUTPUT);
+  digitalWrite(RoboClawFusePin, HIGH);
+  digitalWrite(PumpPin, LOW);
+  digitalWrite(SolenoidPin, HIGH);
+
+  digitalWrite(ExtentPin, LOW); // to raise the mop 
+  digitalWrite(RetractPin, HIGH);
+  delay(ActuatorDuration);
+  digitalWrite(RetractPin, LOW);
 }
 
 void loop() {
+  // digitalWrite(1, HIGH);
+  // digitalWrite(0, HIGH);
   #if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));
@@ -550,13 +717,36 @@ delay(10);
   while (inRangingHandler || !newPosition) {
     delay(10);
   }
+
+  // Serial.println(pathSegIdx);
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
-  if (PathComplete()) { // if the path is complete, stop the robot
-    driveMotors(0, 0);
-    Serial.println("Path Complete"); 
-    inRangingHandler = false;
-    return;
+  // applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
+  // digitalWrite(RoboClawFusePin, HIGH);
+  if (PathComplete()) {
+    // Advance cleaning stage
+    CleaningStage = CleaningStage + 1;
+    // does pass again
+    controller.SpeedAccelM1M2(MOTOR_ADDRESS, motor_accel, 0, 0);
+    delay(3000);
+    pathSegIdx = 0;
+    
+    SprayActive();
+    MopActive();
+    // Insert code to start path following again
+    if (CleaningStage == 2) {
+      // digitalWrite(RoboClawFusePin, LOW);
+      controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
+                                   motor_accel, 0,
+                                   motor_accel, 0);
+      Serial.end();
+      while (true) {
+        delay(1000);
+      }
+      Serial.println("Path Complete");
+      inRangingHandler = false;
+      return;
+    }
   }
 
   GoalResult goal = findLookaheadGoal();
@@ -569,12 +759,12 @@ delay(10);
   Serial.println(goal.gx);
   Serial.println(goal.gy);
   float DesiredHeading = radiansToDegrees(angleToGoal);
-  // Serial.print("Desired Heading: ");
   Serial.println(DesiredHeading);
   float azimuth_deg = radiansToDegrees(global_azimuth);
   Serial.println(azimuth_deg);
   Serial.println(currentX_global);
   Serial.println(currentY_global);
+
 
   L_d2 = delta_x * delta_x + delta_y * delta_y;
   L_d = sqrtf(L_d2);
@@ -595,8 +785,8 @@ delay(10);
   } else {
     K = 2.0f * sinf(alpha) / L_d;
     omega = K * cmdVelocity;
-    leftMotor  = (cmdVelocity - omega * trackWidth / 2.0f) / wheelRadius;
-    rightMotor = (cmdVelocity + omega * trackWidth / 2.0f) / wheelRadius;
+    leftMotor  = (cmdVelocity + omega * trackWidth / 2.0f) / wheelRadius;
+    rightMotor = (cmdVelocity - omega * trackWidth / 2.0f) / wheelRadius;
     driveMotors(leftMotor, rightMotor);
   }
 }

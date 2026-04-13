@@ -74,9 +74,11 @@ void setup() {
 }
 
 void loop() {
+  Serial.println("Anchor 3");
 #if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
   delay(1000);
+  
 }
