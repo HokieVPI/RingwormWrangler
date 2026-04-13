@@ -554,7 +554,12 @@ static void predictFromEncoders(uint32_t nowMs) {
 static bool tryUpdateFromUWB(uint32_t nowMs) {
   // Snapshot latest measurement atomically, then mark it consumed.
   noInterrupts();
-  UWBMeasurement m = latestUwb;
+  UWBMeasurement m;
+  m.x = latestUwb.x;
+  m.y = latestUwb.y;
+  m.timestampMs = latestUwb.timestampMs;
+  m.fresh = latestUwb.fresh;
+  m.valid = latestUwb.valid;
   if (m.fresh) {
     latestUwb.fresh = false;
   }
@@ -628,7 +633,12 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
 static bool tryInitializeFromUwb(uint32_t nowMs) {
   // Same atomic snapshot pattern used by normal EKF updates.
   noInterrupts();
-  UWBMeasurement m = latestUwb;
+  UWBMeasurement m;
+  m.x = latestUwb.x;
+  m.y = latestUwb.y;
+  m.timestampMs = latestUwb.timestampMs;
+  m.fresh = latestUwb.fresh;
+  m.valid = latestUwb.valid;
   if (m.fresh) {
     latestUwb.fresh = false;
   }
@@ -774,6 +784,7 @@ void rangingHandler(UWBRangingData &rangingData) {
   latestUwb.fresh = true;
   latestUwb.valid = true;
   interrupts();
+  }
 }
 
 //------####------ Setup ------####------//
