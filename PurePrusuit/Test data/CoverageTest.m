@@ -59,11 +59,22 @@ currentX = currentX(valid); currentY = currentY(valid);
 desiredHeading = desiredHeading(valid); globalAzimuth = globalAzimuth(valid);
 goalX = goalX(valid); goalY = goalY(valid);
 
+% Color robot positions by spatial-bin occupancy: many samples in a cell =
+% repeated coverage; few samples = sparse or inconsistent sampling there.
+nbins_xy = [40 40];
+[N, ~, ~, binX, binY] = histcounts2(currentX, currentY, nbins_xy);
+okBin = binX > 0 & binY > 0;
+freqPerPoint = zeros(size(currentX));
+freqPerPoint(okBin) = N(sub2ind(size(N), binX(okBin), binY(okBin)));
+
 figure
 hold on
-scatter(currentX, currentY, 'filled')
+scatter(currentX, currentY, 8, freqPerPoint, 'filled')
+colormap(gca, flipud(parula(256)))
+cb = colorbar;
+cb.Label.String = 'Samples in same spatial bin';
 scatter(path_cm(:,1), path_cm(:,2), 100, 'm', 'filled')
-scatter(goalX, goalY, 25, 'g', 'filled')
+% scatter(goalX, goalY, 25, 'g', 'filled')
 for k = 1:length(desiredHeading)
     plot([currentX(k), currentX(k)+10*cos(desiredHeading(k)*(pi/180))], ...
          [currentY(k), currentY(k)+10*sin(desiredHeading(k)*(pi/180))],'LineWidth',1)
@@ -83,7 +94,7 @@ plot(mapArea(:,1),mapArea(:,2))
 title("Pure Pursuit X-Y Position - test\_3\_31\_night12")
 xlabel("x position (cm)")
 ylabel("y position (cm)")
-legend("Robot Position", "Waypoints", "Goal Points")
+legend("Robot position (color = bin frequency)", "Waypoints", "Goal Points")
 axis equal
 grid on 
 hold off
