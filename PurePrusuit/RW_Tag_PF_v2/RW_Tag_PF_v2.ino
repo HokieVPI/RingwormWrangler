@@ -10,8 +10,6 @@
 const int RoboClawFusePin = 3;
 const int SolenoidFusePin = 2;
 const int PumpFusePin = 1;
-const int UltraSonicTriggerPin = 11;
-const int UltraSonicEchoPin = 12;
 // const int S1Pin = 13; // S1 used for roboclaw 
 // const int S2Pin = 14; // S2
 
@@ -28,11 +26,8 @@ const int UltraSonicEchoPin = 12;
  used cursor--- need to verify code 
  **/
 
-// In line of sight 
-float insight_A1;
-float insight_A2;
-float insight_A3;
-float insight_A4;
+//------####------ Global Variables ------####------//
+
 // Anchor Locations in Centimeters (x,y) z=0 
 
 const float Anchor1_x=0;// cm 
@@ -81,26 +76,11 @@ bool anchorOk[NUM_ANCHORS] = {false, false, false, false};
 //previous position state variable 
 double volatile currentX_global = 0.0f;// cm 
 double volatile currentY_global = 0.0f;// cm 
-bool prev_valid = false;
 
 // Heading State Variable 
-double Azimuth = 0.0f; // rad
 double volatile global_azimuth = 0.0f; // rad
 
-// constants 
-static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
-static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 0.5f; // cm 
-const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
-static int staleCount = 0;
-const int MAX_STALE = 10;
-float x_circular_buffer[CIRCULAR_BUFFER_SIZE];
-float y_circular_buffer[CIRCULAR_BUFFER_SIZE];
-int head_index = 0;
-int tail_index = CIRCULAR_BUFFER_SIZE-1;
 // pure pursuit variables & constants 
-float tRobot = 0.0f;
-float tMin = tRobot+0.2f;
 // waypoint constant
 // for wrestling room
 static constexpr int waypoint_radius = 150; // cm
@@ -112,8 +92,6 @@ static constexpr float look_ahead=170.0f; // cm
 // static constexpr int final_waypoint_radius = 100; // cm (larger radius only for final waypoint)
 // static constexpr float look_ahead=100.0f; // cm
 
-
-volatile bool newPosition = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
 float L_d; // Look-Ahead Distance in cm 
@@ -196,9 +174,9 @@ const int ExtentPin = 7;
 const int PumpPin = 1; // orange
 const int SolenoidPin = 2; // green
 
-// ----------- Functions----------//
+//------####------ Functions ------####------//
 
-//---------- start waypoint handling functions----------//
+//------####------ Waypoint + Cleaning Helpers ------####------//
 
  // set up waypoint struct 
  struct Waypoint {
@@ -268,29 +246,40 @@ static Waypoint path[PATH_LENGTH] = {
     //  {240, 146},
 
   // for 
-// functions to get waypoint x and y coordinates and path length
+//-- Function: getWaypointX --//
+// Return waypoint X in cm for a valid index.
 float getWaypointX(int j){
   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_x : 0.0f;
 }
+//-- Function: getWaypointY --//
+// Return waypoint Y in cm for a valid index.
 float getWaypointY(int j){
   return (j>=0 && j<PATH_LENGTH) ? path[j].wp_y : 0.0f;
 }
 
+//-- Function: getPathLength --//
+// Return total number of waypoints in the active path.
 int getPathLength(){
   return PATH_LENGTH;
 }
 // establish path state 
 static int pathSegIdx = 0; // current path segment index
 
+//-- Function: advancePathSegment --//
+// Move to the next path segment index (bounded to final segment).
 void advancePathSegment(){
   if(pathSegIdx < PATH_LENGTH - 1){
     pathSegIdx++;
   }
 
 }
+//-- Function: getCurrentPathSegmentIndex --//
+// Return current segment index used by path tracking.
 int getCurrentPathSegmentIndex(){
   return pathSegIdx;
 }
+//-- Function: PathComplete --//
+// True when robot reached the final segment index.
 bool PathComplete(){
   return
    pathSegIdx == PATH_LENGTH - 1;
@@ -299,10 +288,14 @@ bool PathComplete(){
 
 // Pump on + solenoid off pressurizes bladder while spray-active (no timers).
 // After PathComplete(), CleaningStage is incremented before SprayActive(); stage 1 is the first cleaning phase.
+//-- Function: sprayOutputsActive --//
+// Enable spray outputs only during the spraying stage.
 static bool sprayOutputsActive() {
   return CleaningStage == 0;
 }
 
+//-- Function: applySprayOutputs --//
+// Toggle pump/solenoid outputs according to current cleaning stage.
 void applySprayOutputs() {
   if (sprayOutputsActive()) {
     digitalWrite(SolenoidPin, LOW);
@@ -325,10 +318,14 @@ void applySprayOutputs() {
   }
 }
 
+//-- Function: SprayActive --//
+// Wrapper to apply current spray output policy.
 void SprayActive() {
   applySprayOutputs();
 }
 
+//-- Function: MopActive --//
+// Move linear actuator according to cleaning stage.
 void MopActive() {
   if (CleaningStage == 1) {
     digitalWrite(ExtentPin, HIGH);
@@ -355,6 +352,8 @@ void MopActive() {
 
 
 // advance when the tag is within the waypoint radius of the next waypoint
+//-- Function: AdvancePathSegment --//
+// Advance only when robot is inside the acceptance radius of next waypoint.
 void AdvancePathSegment(){
   if(!PathComplete()){
 
@@ -370,13 +369,13 @@ void AdvancePathSegment(){
     // could add in something to handle overshoot of waypoint radius
   }
 }
-//----------end waypoint handling functions----------//
-
-//---------- start pure pursuit functions----------//
+//------####------ Pure Pursuit Helpers ------####------//
 
 
 // Find intersection of lookahead circle with the path ahead.
 // Uses: currentX_global, currentY_global, look_ahead, path[], pathSegIdx, PATH_LENGTH
+//-- Function: findLookaheadGoal --//
+// Compute a pursuit goal on the current/future path segment.
 GoalResult findLookaheadGoal() {
   GoalResult result;
     result.found = false;
@@ -432,26 +431,32 @@ GoalResult findLookaheadGoal() {
   return result;
 }
 
-//----------end pure pursuit functions----------//
-
-
+//------####------ EKF + UWB Helpers ------####------//
 // Helper to wrap angle to [-PI, PI]
+//-- Function: wrapAnglePi --//
+// Normalize any angle to [-PI, PI] for stable steering math.
 static float wrapAnglePi(float a) {
   while (a > PI)  a -= 2.0f * PI;
   while (a < -PI) a += 2.0f * PI;
   return a;
 }
 // Helper to convert radians to degrees
+//-- Function: radiansToDegrees --//
+// Convert angle from radians to degrees (debug/telemetry use).
 float radiansToDegrees(float a) {
   return a * (180.0/PI);
 }
 
+//-- Function: setCovariance --//
+// Reset EKF covariance matrix P to a diagonal initializer.
 static void setCovariance(float pxx, float pyy, float ptt) {
   P[0][0] = pxx; P[0][1] = 0.0f; P[0][2] = 0.0f;
   P[1][0] = 0.0f; P[1][1] = pyy; P[1][2] = 0.0f;
   P[2][0] = 0.0f; P[2][1] = 0.0f; P[2][2] = ptt;
 }
 
+//-- Function: initialPathHeading --//
+// Use first path segment direction as initial EKF heading.
 static float initialPathHeading() {
   if (PATH_LENGTH < 2) return 0.0f;
   float dx = path[1].wp_x - path[0].wp_x;
@@ -459,10 +464,14 @@ static float initialPathHeading() {
   return atan2f(dy, dx);
 }
 
+//-- Function: isUwbStale --//
+// Mark UWB measurements stale after timeout threshold.
 static bool isUwbStale(uint32_t nowMs, uint32_t measMs) {
   return (nowMs - measMs) > UWB_STALE_MS;
 }
 
+//-- Function: processQScale --//
+// Increase process noise as time since last accepted UWB grows.
 static float processQScale(uint32_t nowMs) {
   uint32_t sinceAccepted = nowMs - lastAcceptedUwbMs;
   if (sinceAccepted > UWB_Q_SCALE_20_MS) return 2.0f;
@@ -470,6 +479,8 @@ static float processQScale(uint32_t nowMs) {
   return 1.0f;
 }
 
+//-- Function: predictFromEncoders --//
+// EKF predict step from wheel encoder odometry and covariance propagation.
 static void predictFromEncoders(uint32_t nowMs) {
   uint8_t s1 = 0, s2 = 0;
   bool validM1 = false, validM2 = false;
@@ -477,6 +488,7 @@ static void predictFromEncoders(uint32_t nowMs) {
   uint32_t encM2 = controller.ReadEncM2(MOTOR_ADDRESS, &s2, &validM2); // left
   if (!validM1 || !validM2) return;
 
+  // First valid read is used only to seed previous counts.
   if (!encoderInitialized) {
     prevEncM1 = encM1;
     prevEncM2 = encM2;
@@ -484,11 +496,13 @@ static void predictFromEncoders(uint32_t nowMs) {
     return;
   }
 
+  // Signed deltas preserve direction and handle count wrap naturally.
   int32_t dCountR = (int32_t)(encM1 - prevEncM1); // M1 is right
   int32_t dCountL = (int32_t)(encM2 - prevEncM2); // M2 is left
   prevEncM1 = encM1;
   prevEncM2 = encM2;
 
+  // Convert encoder counts -> wheel angle -> wheel travel.
   float dPhiR = (2.0f * PI) * ((float)dCountR / ENCODER_CPR);
   float dPhiL = (2.0f * PI) * ((float)dCountL / ENCODER_CPR);
   float dR = wheelRadius * dPhiR;
@@ -501,6 +515,7 @@ static void predictFromEncoders(uint32_t nowMs) {
   ekf.y += dS * sinf(midHeading);
   ekf.theta = wrapAnglePi(ekf.theta + dTheta);
 
+  // Linearized motion Jacobian for covariance propagation.
   float F[3][3] = {
     {1.0f, 0.0f, -dS * sinf(midHeading)},
     {0.0f, 1.0f,  dS * cosf(midHeading)},
@@ -522,6 +537,7 @@ static void predictFromEncoders(uint32_t nowMs) {
       }
     }
   }
+  // Inflate process noise when UWB has been missing for longer periods.
   float qScale = processQScale(nowMs);
   float Q[3] = {EKF_QX_BASE * qScale, EKF_QY_BASE * qScale, EKF_QTH_BASE * qScale};
   for (int i = 0; i < 3; i++) {
@@ -534,7 +550,10 @@ static void predictFromEncoders(uint32_t nowMs) {
   P[2][2] += Q[2];
 }
 
+//-- Function: tryUpdateFromUWB --//
+// EKF correction step using latest fresh UWB x/y measurement.
 static bool tryUpdateFromUWB(uint32_t nowMs) {
+  // Snapshot latest measurement atomically, then mark it consumed.
   noInterrupts();
   UWBMeasurement m = latestUwb;
   if (m.fresh) {
@@ -543,6 +562,7 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
   interrupts();
   if (!m.fresh || !m.valid || isUwbStale(nowMs, m.timestampMs)) return false;
 
+  // Innovation: how far measurement is from predicted state.
   float innov[2] = {m.x - ekf.x, m.y - ekf.y};
   float S00 = P[0][0] + EKF_RX;
   float S01 = P[0][1];
@@ -555,6 +575,7 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
   float iS01 = -S01 / detS;
   float iS10 = -S10 / detS;
   float iS11 =  S00 / detS;
+  // NIS gating rejects large outliers (e.g., bad UWB geometry/NLOS).
   float nis = innov[0] * (iS00 * innov[0] + iS01 * innov[1]) +
               innov[1] * (iS10 * innov[0] + iS11 * innov[1]);
   if (nis > EKF_NIS_GATE) return false;
@@ -567,6 +588,7 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
   K[2][0] = P[2][0] * iS00 + P[2][1] * iS10;
   K[2][1] = P[2][0] * iS01 + P[2][1] * iS11;
 
+  // Bound heading correction from position-only updates to avoid yaw jumps.
   float prevTheta = ekf.theta;
   ekf.x += K[0][0] * innov[0] + K[0][1] * innov[1];
   ekf.y += K[1][0] * innov[0] + K[1][1] * innov[1];
@@ -602,7 +624,10 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
   return true;
 }
 
+//-- Function: tryInitializeFromUwb --//
+// Bootstrap EKF state from first valid fresh UWB measurement.
 static bool tryInitializeFromUwb(uint32_t nowMs) {
+  // Same atomic snapshot pattern used by normal EKF updates.
   noInterrupts();
   UWBMeasurement m = latestUwb;
   if (m.fresh) {
@@ -612,6 +637,7 @@ static bool tryInitializeFromUwb(uint32_t nowMs) {
   if (!m.fresh || !m.valid || isUwbStale(nowMs, m.timestampMs)) return false;
   ekf.x = m.x;
   ekf.y = m.y;
+  // Seed heading from the first path segment so steering starts coherently.
   ekf.theta = initialPathHeading();
   setCovariance(400.0f, 400.0f, 0.25f);
   ekfInitialized = true;
@@ -619,6 +645,8 @@ static bool tryInitializeFromUwb(uint32_t nowMs) {
   return true;
 }
 
+//-- Function: driveMotors --//
+// Convert wheel angular rates to RoboClaw speed commands.
 void driveMotors(float leftRadPerSec, float rightRadPerSec) {
   const int32_t MAX_MOTOR_COUNTS = 70000;
   int32_t leftCounts  = constrain((int32_t)(leftRadPerSec  * RAD_TO_COUNTS), -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
@@ -630,6 +658,8 @@ void driveMotors(float leftRadPerSec, float rightRadPerSec) {
 
 // Trilateration using Cramer's rule on any 3 anchors (indices into anchorX/Y arrays).
 // Returns true on success, writes result into *outX, *outY.
+//-- Function: trilaterate --//
+// Solve tag position from three anchor distances.
 bool trilaterate(int i0, int i1, int i2,
                  const int dist[], float *outX, float *outY) {
   float A = 2.0f*(anchorX[i1] - anchorX[i0]);
@@ -661,7 +691,10 @@ static const AnchorCombo combos[4] = {
   
 };
 
+//------####------ UWB Callback ------####------//
 // handler for ranging notifications
+//-- Function: rangingHandler --//
+// Parse UWB ranges, trilaterate, and publish the latest measurement snapshot.
 void rangingHandler(UWBRangingData &rangingData) {
   if(rangingData.measureType()==(uint8_t)uwb::MeasurementType::TWO_WAY)
   {
@@ -669,6 +702,7 @@ void rangingHandler(UWBRangingData &rangingData) {
     RangingMeasures twr=rangingData.twoWayRangingMeasure();
 
 
+  // Parse all peers in this callback and keep only valid range values.
   for (int j = 0; j < rangingData.available(); j++) {
     // skip invalid measurements
     if (twr[j].status != 0 || twr[j].distance == 0xFFFF) {
@@ -679,24 +713,17 @@ void rangingHandler(UWBRangingData &rangingData) {
     if (twr[j].peer_addr[0] == 0x22 && twr[j].peer_addr[1] == 0x22) {
       dist_1 = twr[j].distance;
       anchor1_received = true;
-      //  insight_A3=twr[j].nlos;
-          // Serial.println(insight_A1);
       // Serial.println(dist_1);
     } else if (twr[j].peer_addr[0] == 0x33 && twr[j].peer_addr[1] == 0x33) {
       dist_2 = twr[j].distance;
       anchor2_received = true;
-      // insight_A2=twr[j].nlos;
-        //  Serial.println(insight_A2);
       // Serial.println(dist_2);
       } else if (twr[j].peer_addr[0] == 0x44 && twr[j].peer_addr[1] == 0x44) {
       dist_3 = twr[j].distance;
-      //  insight_A3=twr[j].nlos;
       anchor3_received = true;
-        //  Serial.println(insight_A3);
       // Serial.println(dist_3);
     } else if (twr[j].peer_addr[0] == 0x55 && twr[j].peer_addr[1] == 0x55) {
       dist_4 = twr[j].distance;
-      //  insight_A4=twr[j].nlos;
       anchor4_received = true;
     }
   }
@@ -710,6 +737,7 @@ void rangingHandler(UWBRangingData &rangingData) {
   anchorDist[2] = dist_3;
   anchorDist[3] = dist_4;
 
+  // We need at least 3 anchors for 2D trilateration.
   int nValid = anchor1_received + anchor2_received
              + anchor3_received + anchor4_received;
 
@@ -724,6 +752,7 @@ void rangingHandler(UWBRangingData &rangingData) {
 
   float x = 0.0f, y = 0.0f;
   bool solved = false;
+  // Try preferred anchor combinations until one solves.
   for (int c = 0; c < 4; c++) {
     int ia = combos[c].a, ib = combos[c].b, ic = combos[c].c;
     if (anchorOk[ia] && anchorOk[ib] && anchorOk[ic]) {
@@ -738,6 +767,7 @@ void rangingHandler(UWBRangingData &rangingData) {
     return;
   }
 
+  // Publish one fresh measurement atomically for loop() consumption.
   noInterrupts();
   latestUwb.x = x;
   latestUwb.y = y;
@@ -747,8 +777,12 @@ void rangingHandler(UWBRangingData &rangingData) {
   interrupts();
 }
 
+//------####------ Setup ------####------//
+//-- Function: setup --//
+// Configure hardware, UWB session, motor controller, and initial state.
 void setup() {
 
+  // Start serial before any diagnostics and board-level init.
   Serial.begin(115200);
 
 #if defined(ARDUINO_PORTENTA_C33)
@@ -780,7 +814,7 @@ void setup() {
   dest.add(dstAddr4);
  
 
-  // register the ranging notification handler before starting
+  // Register callback before UWB session start so early packets are captured.
   UWB.registerRangingCallback(rangingHandler);
 
   UWB.begin(); //start the UWB stack, use Serial for the log output
@@ -804,6 +838,7 @@ void setup() {
   myController.start();
   
   
+  // Initialize RoboClaw UART and velocity PID gains.
   controller.begin(38400);
   delay(100);
   controller.SetM1VelocityPID(MOTOR_ADDRESS, 1.79279, 0.27940, 0.00000, 70620);
@@ -823,22 +858,28 @@ void setup() {
   delay(ActuatorDuration);
   digitalWrite(RetractPin, LOW);
 
+  // Initialize EKF/control timers to current time baseline.
   lastControlTickMs = millis();
   lastAcceptedUwbMs = lastControlTickMs;
 }
 
+//------####------ Loop ------####------//
+//-- Function: loop --//
+// Run fixed-rate EKF + pure pursuit control and cleaning-stage transitions.
 void loop() {
+  // Fixed-period control loop: run once every EKF_DT_MS.
   uint32_t now = millis();
   if ((now - lastControlTickMs) < EKF_DT_MS) {
     return;
   }
-  lastControlTickMs += EKF_DT_MS;
+  lastControlTickMs = now;  // drop missed ticks to avoid burst catch-up after delays
 
 #if defined(ARDUINO_PORTENTA_C33)
   /* Only the Portenta C33 has an RGB LED. */
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
 
+  // Hold motors still until first valid UWB-based EKF initialization.
   if (!ekfInitialized) {
     if (!tryInitializeFromUwb(now)) {
       driveMotors(0.0f, 0.0f);
@@ -846,9 +887,11 @@ void loop() {
     }
   }
 
+  // Predict from encoders every tick; correct with UWB when available.
   predictFromEncoders(now);
   tryUpdateFromUWB(now);
 
+  // Publish EKF state for navigation/pure-pursuit consumers.
   currentX_global = ekf.x;
   currentY_global = ekf.y;
   global_azimuth = ekf.theta;
@@ -856,6 +899,7 @@ void loop() {
   AdvancePathSegment(); // check if we reached the next waypoint
   // applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
   // digitalWrite(RoboClawFusePin, HIGH);
+  // Handle cleaning-stage transitions when path reaches final segment.
   if (PathComplete()) {
     // Advance cleaning stage
     CleaningStage = CleaningStage + 1;
@@ -877,7 +921,9 @@ void loop() {
         delay(1000);
       }
     }
+  }
 
+  // Compute lookahead target and steering geometry in robot frame.
   GoalResult goal = findLookaheadGoal();
 
   delta_x = goal.gx - currentX_global;
@@ -906,6 +952,7 @@ void loop() {
   // }
    float cmdVelocity = velocity;
 
+  // Stop at near-zero lookahead distance to avoid noisy steering spikes.
   if (L_d < 1.0f) {
     K = 0.0f;
     driveMotors(0, 0);
