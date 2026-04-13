@@ -124,17 +124,16 @@ UART controllerSerial(14, 13);
 static constexpr float ENCODER_CPR   = 24293.0f;
 static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
 uint32_t motor_accel = 10000;
-static constexpr float EKF_DT_S = 0.1f;                 // 10 Hz loop
-static constexpr uint32_t EKF_DT_MS = 100;
-static constexpr float EKF_QX_BASE = 4.0f;              // cm^2 / step
-static constexpr float EKF_QY_BASE = 4.0f;              // cm^2 / step
-static constexpr float EKF_QTH_BASE = 0.0030f;          // rad^2 / step
-static constexpr float EKF_RX = 144.0f;                 // cm^2
-static constexpr float EKF_RY = 144.0f;                 // cm^2
-static constexpr float EKF_NIS_GATE = 9.21f;
-static constexpr uint32_t UWB_STALE_MS = 500;
-static constexpr uint32_t UWB_Q_SCALE_15_MS = 2000;
-static constexpr uint32_t UWB_Q_SCALE_20_MS = 5000;
+static constexpr uint32_t ControlLoop_period_ms = 100;  // 10 Hz control loop
+static constexpr float QX_BASE = 4.0f;              // cm^2 / step
+static constexpr float QY_BASE = 4.0f;              // cm^2 / step
+static constexpr float QTH_BASE = 0.0030f;          // rad^2 / step
+static constexpr float RX = 144.0f;                 // cm^2
+static constexpr float RY = 144.0f;                 // cm^2
+static constexpr float NIS_GATE = 9.21f;
+static constexpr uint32_t UWB_stale_ms = 500;
+static constexpr uint32_t Q_SCALE_15_MS = 2000;
+static constexpr uint32_t Q_SCALE_20_MS = 5000;
 static constexpr float MAX_THETA_CORR_RAD = 8.0f * PI / 180.0f;
 
 struct EKFState {
@@ -467,15 +466,15 @@ static float initialPathHeading() {
 //-- Function: isUwbStale --//
 // Mark UWB measurements stale after timeout threshold.
 static bool isUwbStale(uint32_t nowMs, uint32_t measMs) {
-  return (nowMs - measMs) > UWB_STALE_MS;
+  return (nowMs - measMs) > UWB_stale_ms;
 }
 
 //-- Function: processQScale --//
 // Increase process noise as time since last accepted UWB grows.
 static float processQScale(uint32_t nowMs) {
   uint32_t sinceAccepted = nowMs - lastAcceptedUwbMs;
-  if (sinceAccepted > UWB_Q_SCALE_20_MS) return 2.0f;
-  if (sinceAccepted > UWB_Q_SCALE_15_MS) return 1.5f;
+  if (sinceAccepted > Q_SCALE_20_MS) return 2.0f;
+  if (sinceAccepted > Q_SCALE_15_MS) return 1.5f;
   return 1.0f;
 }
 
@@ -539,7 +538,7 @@ static void predictFromEncoders(uint32_t nowMs) {
   }
   // Inflate process noise when UWB has been missing for longer periods.
   float qScale = processQScale(nowMs);
-  float Q[3] = {EKF_QX_BASE * qScale, EKF_QY_BASE * qScale, EKF_QTH_BASE * qScale};
+  float Q[3] = {QX_BASE * qScale, QY_BASE * qScale, QTH_BASE * qScale};
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       P[i][j] = FPFt[i][j];
@@ -564,10 +563,10 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
 
   // Innovation: how far measurement is from predicted state.
   float innov[2] = {m.x - ekf.x, m.y - ekf.y};
-  float S00 = P[0][0] + EKF_RX;
+  float S00 = P[0][0] + RX;
   float S01 = P[0][1];
   float S10 = P[1][0];
-  float S11 = P[1][1] + EKF_RY;
+  float S11 = P[1][1] + RY;
   float detS = S00 * S11 - S01 * S10;
   if (fabsf(detS) < 1e-6f) return false;
 
@@ -578,7 +577,7 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
   // NIS gating rejects large outliers (e.g., bad UWB geometry/NLOS).
   float nis = innov[0] * (iS00 * innov[0] + iS01 * innov[1]) +
               innov[1] * (iS10 * innov[0] + iS11 * innov[1]);
-  if (nis > EKF_NIS_GATE) return false;
+  if (nis > NIS_GATE) return false;
 
   float K[3][2];
   K[0][0] = P[0][0] * iS00 + P[0][1] * iS10;
@@ -867,9 +866,9 @@ void setup() {
 //-- Function: loop --//
 // Run fixed-rate EKF + pure pursuit control and cleaning-stage transitions.
 void loop() {
-  // Fixed-period control loop: run once every EKF_DT_MS.
+  // Fixed-period control loop: run once every ControlLoop_period_ms.
   uint32_t now = millis();
-  if ((now - lastControlTickMs) < EKF_DT_MS) {
+  if ((now - lastControlTickMs) < ControlLoop_period_ms) {
     return;
   }
   lastControlTickMs = now;  // drop missed ticks to avoid burst catch-up after delays
