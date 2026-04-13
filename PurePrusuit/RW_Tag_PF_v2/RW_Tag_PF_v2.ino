@@ -86,6 +86,7 @@ bool prev_valid = false;
 // Heading State Variable 
 double Azimuth = 0.0f; // rad
 double volatile global_azimuth = 0.0f; // rad
+volatile bool headingValid = false;
 
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
@@ -125,6 +126,9 @@ float omega; // Rotational Velocity in rad/s
 
 // for wrestling room
 const float velocity = 70.0f;  // Constant Velocity in cm/s
+const float startupCrawlSpeedCmS = 10.0f; // slow forward speed while acquiring heading
+const float ObstructionStopCm = 200.0f;
+const float ObstructionClearCm = 220.0f;
 
 // for lab space
 // const float velocity = 50.0f;  // Constant Velocity in cm/s
@@ -408,6 +412,21 @@ float radiansToDegrees(float a) {
   return a * (180.0/PI);
 }
 
+float Ultrasonic() {
+  digitalWrite(UltraSonicTriggerPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(UltraSonicTriggerPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(UltraSonicTriggerPin, LOW);
+
+  unsigned long duration = pulseIn(UltraSonicEchoPin, HIGH, 30000UL);
+  if (duration == 0UL) {
+    return -1.0f;
+  }
+
+  return ((float)duration) / 58.0f;
+}
+
 void driveMotors(float leftRadPerSec, float rightRadPerSec) {
   const int32_t MAX_MOTOR_COUNTS = 70000;
   int32_t leftCounts  = constrain((int32_t)(leftRadPerSec  * RAD_TO_COUNTS), -MAX_MOTOR_COUNTS, MAX_MOTOR_COUNTS);
@@ -611,6 +630,7 @@ float prevY=0.0f;
   if (dist_sq >= minMovement_sq) {
     Azimuth = atan2f(dy, dx);
     global_azimuth = Azimuth;
+    headingValid = true;
     staleCount = 0;
   }else{
     // Serial.print("min move  ");
@@ -695,10 +715,13 @@ void setup() {
   pinMode(SolenoidPin, OUTPUT);
   pinMode(RetractPin, OUTPUT);
   pinMode(ExtentPin, OUTPUT);
+  pinMode(UltraSonicTriggerPin, OUTPUT);
+  pinMode(UltraSonicEchoPin, INPUT);
   pinMode(RoboClawFusePin, OUTPUT);
   digitalWrite(RoboClawFusePin, HIGH);
   digitalWrite(PumpPin, LOW);
   digitalWrite(SolenoidPin, HIGH);
+  digitalWrite(UltraSonicTriggerPin, LOW);
 
   digitalWrite(ExtentPin, LOW); // to raise the mop 
   digitalWrite(RetractPin, HIGH);
@@ -720,6 +743,29 @@ delay(10);
 
   // Serial.println(pathSegIdx);
   newPosition = false;  // consumed; wait for next update before next iteration
+
+  float obstructionCm = Ultrasonic();
+  if (obstructionCm > 0.0f && obstructionCm <= ObstructionStopCm) {
+    driveMotors(0.0f, 0.0f);
+    while (true) {
+      delay(50);
+      obstructionCm = Ultrasonic();
+      if (obstructionCm < 0.0f || obstructionCm > ObstructionClearCm) {
+        break;
+      }
+      driveMotors(0.0f, 0.0f);
+    }
+    headingValid = false;
+    return;
+  }
+
+  // Crawl forward after startup until heading becomes valid from measured movement.
+  if (!headingValid) {
+    float crawlRadPerSec = startupCrawlSpeedCmS / wheelRadius;
+    driveMotors(crawlRadPerSec, crawlRadPerSec);
+    return;
+  }
+
   AdvancePathSegment(); // check if we reached the next waypoint
   // applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
   // digitalWrite(RoboClawFusePin, HIGH);
