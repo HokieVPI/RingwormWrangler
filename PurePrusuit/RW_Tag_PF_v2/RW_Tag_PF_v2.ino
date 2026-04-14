@@ -116,6 +116,15 @@ static constexpr float look_ahead=170.0f; // cm
 
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
 volatile bool newPosition = false;
+
+// UWB staleness: after UWB_STALE_MS without a successful trilateration fix, integrate pose from encoders at ODOM_CTRL_PERIOD_MS.
+static constexpr uint32_t UWB_STALE_MS = 3000;
+static constexpr uint32_t ODOM_CTRL_PERIOD_MS = 100;  // 10 Hz
+volatile uint32_t last_uwb_position_ms = 0;
+static uint32_t last_odom_ctrl_ms = 0;
+static int32_t odom_enc_m1_prev = 0;
+static int32_t odom_enc_m2_prev = 0;
+static bool odom_enc_initialized = false;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
 float L_d; // Look-Ahead Distance in cm 
@@ -417,6 +426,59 @@ void driveMotors(float leftRadPerSec, float rightRadPerSec) {
                                motor_accel, (uint32_t)leftCounts);
 }
 
+// True before the first stamped UWB fix (wait for newPosition only). After that, true while the last fix is newer than UWB_STALE_MS.
+static bool uwbPositionFresh() {
+  if (last_uwb_position_ms == 0) {
+    return true;
+  }
+  return (millis() - last_uwb_position_ms) <= UWB_STALE_MS;
+}
+
+// M1 = right, M2 = left (matches driveMotors). Call whenever UWB publishes a new pose so stale-mode deltas start from the last fix.
+static void syncOdomEncoders() {
+  bool v1 = false, v2 = false;
+  uint32_t e1u = controller.ReadEncM1(MOTOR_ADDRESS, nullptr, &v1);
+  uint32_t e2u = controller.ReadEncM2(MOTOR_ADDRESS, nullptr, &v2);
+  if (!v1 || !v2) {
+    return;
+  }
+  odom_enc_m1_prev = (int32_t)e1u;
+  odom_enc_m2_prev = (int32_t)e2u;
+  odom_enc_initialized = true;
+}
+
+// Integrate global pose from wheel encoders (10 Hz while UWB is stale).
+static void updateOdometryFromEncoders() {
+  if (!odom_enc_initialized) {
+    syncOdomEncoders();
+    return;
+  }
+  bool v1 = false, v2 = false;
+  uint32_t e1u = controller.ReadEncM1(MOTOR_ADDRESS, nullptr, &v1);
+  uint32_t e2u = controller.ReadEncM2(MOTOR_ADDRESS, nullptr, &v2);
+  if (!v1 || !v2) {
+    return;
+  }
+  int32_t e1 = (int32_t)e1u;
+  int32_t e2 = (int32_t)e2u;
+  int32_t dm1 = e1 - odom_enc_m1_prev;
+  int32_t dm2 = e2 - odom_enc_m2_prev;
+  odom_enc_m1_prev = e1;
+  odom_enc_m2_prev = e2;
+
+  float ds_l = ((float)dm1 / RAD_TO_COUNTS) * wheelRadius;
+  float ds_r = ((float)dm2 / RAD_TO_COUNTS) * wheelRadius;
+  float dtheta = (ds_r - ds_l) / trackWidth;
+  float ds = 0.5f * (ds_l + ds_r);
+  float theta_mid = (float)global_azimuth + 0.5f * dtheta;
+
+  currentX_global += (double)(ds * cosf(theta_mid));
+  currentY_global += (double)(ds * sinf(theta_mid));
+  float az = wrapAnglePi((float)global_azimuth + dtheta);
+  global_azimuth = az;
+  Azimuth = az;
+}
+
 // Trilateration using Cramer's rule on any 3 anchors (indices into anchorX/Y arrays).
 // Returns true on success, writes result into *outX, *outY.
 bool trilaterate(int i0, int i1, int i2,
@@ -622,6 +684,8 @@ float prevY=0.0f;
 
   }
 
+  last_uwb_position_ms = millis();
+  syncOdomEncoders();
   newPosition = true;
 // ------------ End Heading Calculation ------------ //
 }
@@ -700,26 +764,13 @@ void setup() {
   digitalWrite(PumpPin, LOW);
   digitalWrite(SolenoidPin, HIGH);
 
-  digitalWrite(ExtentPin, LOW); // to raise the mop 
-  digitalWrite(RetractPin, HIGH);
-  delay(ActuatorDuration);
-  digitalWrite(RetractPin, LOW);
+  // digitalWrite(ExtentPin, HIGH); // to raise the mop 
+  // digitalWrite(RetractPin, LOW);
+  // delay(ActuatorDuration);
+  // digitalWrite(RetractPin, HIGH);
 }
 
-void loop() {
-  // digitalWrite(1, HIGH);
-  // digitalWrite(0, HIGH);
-  #if defined(ARDUINO_PORTENTA_C33)
-  /* Only the Portenta C33 has an RGB LED. */
-  digitalWrite(LEDR, !digitalRead(LEDR));
-#endif
-delay(10);
-  while (inRangingHandler || !newPosition) {
-    delay(10);
-  }
-
-  // Serial.println(pathSegIdx);
-  newPosition = false;  // consumed; wait for next update before next iteration
+static void runPathFollowingControl() {
   AdvancePathSegment(); // check if we reached the next waypoint
   // applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
   // digitalWrite(RoboClawFusePin, HIGH);
@@ -730,7 +781,7 @@ delay(10);
     controller.SpeedAccelM1M2(MOTOR_ADDRESS, motor_accel, 0, 0);
     delay(3000);
     pathSegIdx = 0;
-    
+
     SprayActive();
     MopActive();
     // Insert code to start path following again
@@ -769,7 +820,7 @@ delay(10);
   L_d2 = delta_x * delta_x + delta_y * delta_y;
   L_d = sqrtf(L_d2);
 
-  float alpha = wrapAnglePi(angleToGoal - global_azimuth);
+  float alpha = wrapAnglePi(angleToGoal - (float)global_azimuth);
 
   float absAlpha = fabsf(alpha);
   // float speedScale = 0.5f;
@@ -788,5 +839,42 @@ delay(10);
     leftMotor  = (cmdVelocity + omega * trackWidth / 2.0f) / wheelRadius;
     rightMotor = (cmdVelocity - omega * trackWidth / 2.0f) / wheelRadius;
     driveMotors(leftMotor, rightMotor);
+  }
+}
+
+void loop() {
+  // digitalWrite(1, HIGH);
+  // digitalWrite(0, HIGH);
+  #if defined(ARDUINO_PORTENTA_C33)
+  /* Only the Portenta C33 has an RGB LED. */
+  digitalWrite(LEDR, !digitalRead(LEDR));
+#endif
+  delay(10);
+
+  // Wait for a UWB pose update only while the last fix is still "fresh". If no new fix for
+  // UWB_STALE_MS, stop waiting so we can run encoder odometry (otherwise loop would block forever).
+  if (uwbPositionFresh()) {
+    while (true) {
+      if (!uwbPositionFresh()) {
+        break;
+      }
+      if (!inRangingHandler && newPosition) {
+        break;
+      }
+      delay(10);
+    }
+  }
+
+  if (uwbPositionFresh() && newPosition) {
+    newPosition = false;
+    runPathFollowingControl();
+  } else if (!uwbPositionFresh()) {
+    if ((millis() - last_odom_ctrl_ms) < ODOM_CTRL_PERIOD_MS) {
+      return;
+    }
+    last_odom_ctrl_ms = millis();
+    updateOdometryFromEncoders();
+    Serial.print("Odometry");
+    runPathFollowingControl();
   }
 }
