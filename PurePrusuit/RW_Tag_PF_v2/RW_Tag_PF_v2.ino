@@ -115,7 +115,10 @@ static constexpr float look_ahead=170.0f; // cm
 
 
 static constexpr float MIN_SPEED_SCALE = 0.2f; // floor at 20% of max velocity
+static constexpr unsigned long POSITION_TIMEOUT_MS = 3000;
+static constexpr float STALE_SPEED_SCALE = 0.5f;
 volatile bool newPosition = false;
+volatile unsigned long lastPositionUpdateMs = 0;
 float delta_x; // differnce in look-ahead distance from current position  
 float delta_y; // differnce in look-ahead distance from current position 
 float L_d; // Look-Ahead Distance in cm 
@@ -615,13 +618,11 @@ float prevY=0.0f;
   }else{
     // Serial.print("min move  ");
     staleCount++;
-    if(staleCount >= MAX_STALE) {
-      float minDrive = 0.5f * velocity / wheelRadius;
-      driveMotors(-minDrive, -minDrive);
-    }
+    if (staleCount > MAX_STALE) staleCount = MAX_STALE;
 
   }
 
+  lastPositionUpdateMs = millis();
   newPosition = true;
 // ------------ End Heading Calculation ------------ //
 }
@@ -704,6 +705,7 @@ void setup() {
   digitalWrite(RetractPin, HIGH);
   delay(ActuatorDuration);
   digitalWrite(RetractPin, LOW);
+  lastPositionUpdateMs = millis();
 }
 
 void loop() {
@@ -714,16 +716,24 @@ void loop() {
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
 delay(10);
-  while (inRangingHandler || !newPosition) {
-    delay(10);
+  if (inRangingHandler) {
+    return;
   }
 
-  // Serial.println(pathSegIdx);
-  newPosition = false;  // consumed; wait for next update before next iteration
-  AdvancePathSegment(); // check if we reached the next waypoint
+  const unsigned long nowMs = millis();
+  const bool hasFreshPosition = newPosition;
+  const bool fallbackActive = !hasFreshPosition && (nowMs - lastPositionUpdateMs >= POSITION_TIMEOUT_MS);
+
+  if (hasFreshPosition) {
+    newPosition = false;  // consumed
+    AdvancePathSegment(); // check if we reached the next waypoint
+  } else if (!fallbackActive) {
+    return;
+  }
+
   // applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
   // digitalWrite(RoboClawFusePin, HIGH);
-  if (PathComplete()) {
+  if (hasFreshPosition && PathComplete()) {
     // Advance cleaning stage
     CleaningStage = CleaningStage + 1;
     // does pass again
@@ -777,7 +787,10 @@ delay(10);
   //   speedScale = (PI - absAlpha) / PI;
   //   if (speedScale < MIN_SPEED_SCALE) speedScale = MIN_SPEED_SCALE;
   // }
-   float cmdVelocity = velocity;
+  float cmdVelocity = velocity;
+  if (fallbackActive) {
+    cmdVelocity *= STALE_SPEED_SCALE;
+  }
 
   if (L_d < 1.0f) {
     K = 0.0f;
