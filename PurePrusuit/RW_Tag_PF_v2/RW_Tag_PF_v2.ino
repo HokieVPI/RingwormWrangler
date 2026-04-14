@@ -723,11 +723,11 @@ void setup() {
   digitalWrite(SolenoidPin, HIGH);
   digitalWrite(UltraSonicTriggerPin, LOW);
 
-  digitalWrite(ExtentPin, LOW); // to raise the mop 
-  digitalWrite(RetractPin, HIGH);
-  delay(ActuatorDuration);
-  digitalWrite(RetractPin, LOW);
-}
+//   digitalWrite(ExtentPin, LOW); // to raise the mop 
+//   digitalWrite(RetractPin, HIGH);
+//   delay(ActuatorDuration);
+//   digitalWrite(RetractPin, LOW);
+ }
 
 void loop() {
   // digitalWrite(1, HIGH);
@@ -747,6 +747,7 @@ delay(10);
   float obstructionCm = Ultrasonic();
   if (obstructionCm > 0.0f && obstructionCm <= ObstructionStopCm) {
     driveMotors(0.0f, 0.0f);
+    Serial.println("obstruction");
     while (true) {
       delay(50);
       obstructionCm = Ultrasonic();
