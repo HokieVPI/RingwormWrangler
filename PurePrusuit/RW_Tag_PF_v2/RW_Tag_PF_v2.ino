@@ -90,7 +90,7 @@ double volatile global_azimuth = 0.0f; // rad
 // constants 
 static constexpr int HALF_CIRCULAR_BUFFER_SIZE = 5 ;
 static constexpr int CIRCULAR_BUFFER_SIZE = HALF_CIRCULAR_BUFFER_SIZE*2;
-const float MinMovement = 0.5f; // cm 
+const float MinMovement = 0.1f; // cm 
 const float minMovement_sq=MinMovement*MinMovement; // minimum movement squared
 static int staleCount = 0;
 const int MAX_STALE = 10;
@@ -700,10 +700,10 @@ void setup() {
   digitalWrite(PumpPin, LOW);
   digitalWrite(SolenoidPin, HIGH);
 
-  digitalWrite(ExtentPin, LOW); // to raise the mop 
-  digitalWrite(RetractPin, HIGH);
-  delay(ActuatorDuration);
-  digitalWrite(RetractPin, LOW);
+  // digitalWrite(ExtentPin, LOW); // to raise the mop 
+  // digitalWrite(RetractPin, HIGH);
+  // delay(ActuatorDuration);
+  // digitalWrite(RetractPin, LOW);
 }
 
 void loop() {
