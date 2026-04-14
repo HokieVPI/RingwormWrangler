@@ -121,20 +121,24 @@ UART controllerSerial(14, 13);
 #define MOTOR_ADDRESS        128
 #define LIBRARY_READ_TIMEOUT 10000
 
+// Set to 1 for Serial Monitor EKF diagnostics ([EKF] lines). Set to 0 to disable.
+#ifndef DEBUG_EKF_SERIAL
+#define DEBUG_EKF_SERIAL 1
+#endif
+
 static constexpr float ENCODER_CPR   = 24293.0f;
 static constexpr float RAD_TO_COUNTS = ENCODER_CPR / (2.0f * PI);
 uint32_t motor_accel = 10000;
 static constexpr uint32_t ControlLoop_period_ms = 100;  // 10 Hz control loop
-static constexpr float QX_BASE = 4.0f;              // cm^2 / step
-static constexpr float QY_BASE = 4.0f;              // cm^2 / step
-static constexpr float QTH_BASE = 0.0030f;          // rad^2 / step
-static constexpr float RX = 144.0f;                 // cm^2
-static constexpr float RY = 144.0f;                 // cm^2
-static constexpr float NIS_GATE = 9.21f;
-static constexpr uint32_t UWB_stale_ms = 500;
-static constexpr uint32_t Q_SCALE_15_MS = 2000;
-static constexpr uint32_t Q_SCALE_20_MS = 5000;
-static constexpr float MAX_THETA_CORR_RAD = 8.0f * PI / 180.0f;
+static constexpr float QX_BASE = 80.0f;              // cm^2 / step
+static constexpr float QY_BASE = 80.0f;              // cm^2 / step
+static constexpr float QTH_BASE = 0.0600f;          // rad^2 / step
+static constexpr float RX = 100.0f;                 // cm^2
+static constexpr float RY = 100.0f;                 // cm^2
+static constexpr float NIS_GATE = 25.0f;
+static constexpr uint32_t UWB_stale_ms = 1500;
+static constexpr uint32_t Q_SCALE_15_MS = 6000;
+static constexpr uint32_t Q_SCALE_20_MS = 15000;
 
 struct EKFState {
   float x;
@@ -547,6 +551,27 @@ static void predictFromEncoders(uint32_t nowMs) {
   P[0][0] += Q[0];
   P[1][1] += Q[1];
   P[2][2] += Q[2];
+
+#if DEBUG_EKF_SERIAL
+  Serial.print("[EKF] pred dS_cm=");
+  Serial.print(dS, 3);
+  Serial.print(" dTh_deg=");
+  Serial.print(dTheta * 180.0f / PI, 3);
+  Serial.print(" qScale=");
+  Serial.print(qScale, 2);
+  Serial.print(" | x=");
+  Serial.print(ekf.x, 2);
+  Serial.print(" y=");
+  Serial.print(ekf.y, 2);
+  Serial.print(" th_deg=");
+  Serial.print(ekf.theta * 180.0f / PI, 2);
+  Serial.print(" Pdiag=");
+  Serial.print(P[0][0], 1);
+  Serial.print(",");
+  Serial.print(P[1][1], 1);
+  Serial.print(",");
+  Serial.println(P[2][2], 4);
+#endif
 }
 
 //-- Function: tryUpdateFromUWB --//
@@ -564,7 +589,20 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
     latestUwb.fresh = false;
   }
   interrupts();
-  if (!m.fresh || !m.valid || isUwbStale(nowMs, m.timestampMs)) return false;
+  if (!m.fresh || !m.valid || isUwbStale(nowMs, m.timestampMs)) {
+#if DEBUG_EKF_SERIAL
+    Serial.print("[EKF] UWB skip: ");
+    if (!m.fresh) {
+      Serial.println("not fresh");
+    } else if (!m.valid) {
+      Serial.println("invalid");
+    } else {
+      Serial.print("stale age_ms=");
+      Serial.println((unsigned long)(nowMs - m.timestampMs));
+    }
+#endif
+    return false;
+  }
 
   // Innovation: how far measurement is from predicted state.
   float innov[2] = {m.x - ekf.x, m.y - ekf.y};
@@ -573,7 +611,12 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
   float S10 = P[1][0];
   float S11 = P[1][1] + RY;
   float detS = S00 * S11 - S01 * S10;
-  if (fabsf(detS) < 1e-6f) return false;
+  if (fabsf(detS) < 1e-6f) {
+#if DEBUG_EKF_SERIAL
+    Serial.println("[EKF] UWB skip: detS near zero");
+#endif
+    return false;
+  }
 
   float iS00 =  S11 / detS;
   float iS01 = -S01 / detS;
@@ -582,7 +625,15 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
   // NIS gating rejects large outliers (e.g., bad UWB geometry/NLOS).
   float nis = innov[0] * (iS00 * innov[0] + iS01 * innov[1]) +
               innov[1] * (iS10 * innov[0] + iS11 * innov[1]);
-  if (nis > NIS_GATE) return false;
+  if (nis > NIS_GATE) {
+#if DEBUG_EKF_SERIAL
+    Serial.print("[EKF] UWB skip: NIS=");
+    Serial.print(nis, 2);
+    Serial.print(" > gate ");
+    Serial.println(NIS_GATE, 2);
+#endif
+    return false;
+  }
 
   float K[3][2];
   K[0][0] = P[0][0] * iS00 + P[0][1] * iS10;
@@ -592,14 +643,12 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
   K[2][0] = P[2][0] * iS00 + P[2][1] * iS10;
   K[2][1] = P[2][0] * iS01 + P[2][1] * iS11;
 
-  // Bound heading correction from position-only updates to avoid yaw jumps.
   float prevTheta = ekf.theta;
   ekf.x += K[0][0] * innov[0] + K[0][1] * innov[1];
   ekf.y += K[1][0] * innov[0] + K[1][1] * innov[1];
   ekf.theta += K[2][0] * innov[0] + K[2][1] * innov[1];
+  ekf.theta = wrapAnglePi(ekf.theta);
   float dThetaCorr = wrapAnglePi(ekf.theta - prevTheta);
-  dThetaCorr = constrain(dThetaCorr, -MAX_THETA_CORR_RAD, MAX_THETA_CORR_RAD);
-  ekf.theta = wrapAnglePi(prevTheta + dThetaCorr);
 
   float KH[3][3] = {
     {K[0][0], K[0][1], 0.0f},
@@ -625,6 +674,22 @@ static bool tryUpdateFromUWB(uint32_t nowMs) {
     }
   }
   lastAcceptedUwbMs = nowMs;
+#if DEBUG_EKF_SERIAL
+  Serial.print("[EKF] UWB upd innov_cm=(");
+  Serial.print(innov[0], 2);
+  Serial.print(",");
+  Serial.print(innov[1], 2);
+  Serial.print(") NIS=");
+  Serial.print(nis, 2);
+  Serial.print(" dTh_corr_deg=");
+  Serial.print(dThetaCorr * 180.0f / PI, 3);
+  Serial.print(" | x=");
+  Serial.print(ekf.x, 2);
+  Serial.print(" y=");
+  Serial.print(ekf.y, 2);
+  Serial.print(" th_deg=");
+  Serial.println(ekf.theta * 180.0f / PI, 2);
+#endif
   return true;
 }
 
@@ -643,7 +708,20 @@ static bool tryInitializeFromUwb(uint32_t nowMs) {
     latestUwb.fresh = false;
   }
   interrupts();
-  if (!m.fresh || !m.valid || isUwbStale(nowMs, m.timestampMs)) return false;
+  if (!m.fresh || !m.valid || isUwbStale(nowMs, m.timestampMs)) {
+#if DEBUG_EKF_SERIAL
+    Serial.print("[EKF] init skip: ");
+    if (!m.fresh) {
+      Serial.println("not fresh");
+    } else if (!m.valid) {
+      Serial.println("invalid");
+    } else {
+      Serial.print("stale age_ms=");
+      Serial.println((unsigned long)(nowMs - m.timestampMs));
+    }
+#endif
+    return false;
+  }
   ekf.x = m.x;
   ekf.y = m.y;
   // Seed heading from the first path segment so steering starts coherently.
@@ -651,6 +729,16 @@ static bool tryInitializeFromUwb(uint32_t nowMs) {
   setCovariance(400.0f, 400.0f, 0.25f);
   ekfInitialized = true;
   lastAcceptedUwbMs = nowMs;
+#if DEBUG_EKF_SERIAL
+  Serial.print("[EKF] init x=");
+  Serial.print(ekf.x, 2);
+  Serial.print(" y=");
+  Serial.print(ekf.y, 2);
+  Serial.print(" th_deg=");
+  Serial.print(ekf.theta * 180.0f / PI, 2);
+  Serial.print(" Pdiag=400,400,0.25");
+  Serial.println();
+#endif
   return true;
 }
 
