@@ -333,7 +333,90 @@ void AdvancePathSegment(){
   }
 }
 //----------end waypoint handling functions----------//
+//---------- start kinematic fallback functions----------//
 
+// variables for kinematic fallback
+float predictX = 0.0f;
+float predictY = 0.0f;
+float predictAzimuth = 0.0f;
+unsigned long LastCommandTime = 0;
+unsigned long LastRangingUpdateTime = 0;
+unsigned long StaleCommand = 2000; // 2 seconds
+int predictCount=0; // count of predictions
+int predictCountMax=10; // max count of predictions
+bool waitForUwbAfterPredictCap = false;
+const bool DEBUG_KIN_FALLBACK = true;
+bool fallbackActive = false;
+
+void kinematicPrediction(){
+  unsigned long currentTime = millis();
+  if (waitForUwbAfterPredictCap) {
+    return;
+  }
+
+  if ((currentTime - LastRangingUpdateTime) < StaleCommand) {
+    if (DEBUG_KIN_FALLBACK && fallbackActive) {
+      Serial.println("KIN_FALLBACK UWB_RESUME");
+    }
+    fallbackActive = false;
+    predictCount = 0;
+    predictX = currentX_global;
+    predictY = currentY_global;
+    predictAzimuth = global_azimuth;
+    return;
+  }
+
+  if ((currentTime - LastCommandTime) < StaleCommand) {
+    return;
+  }
+
+  if (DEBUG_KIN_FALLBACK && !fallbackActive) {
+    Serial.println("KIN_FALLBACK ENTER");
+  }
+  fallbackActive = true;
+
+  if (predictCount >= predictCountMax) {
+    waitForUwbAfterPredictCap = true;
+    driveMotors(0.0f, 0.0f);
+    LastCommandTime = currentTime;
+    if (DEBUG_KIN_FALLBACK) {
+      Serial.println("KIN_FALLBACK CAP_STOP");
+    }
+    return;
+  }
+
+  float dt = (currentTime - LastCommandTime) / 1000.0f;
+  float theta0 = global_azimuth;
+
+  if (fabsf(omega) > 1e-5f) {
+    predictAzimuth = theta0 + omega * dt;
+    predictX = currentX_global + (velocity / omega) * (sinf(theta0 + omega * dt) - sinf(theta0));
+    predictY = currentY_global - (velocity / omega) * (cosf(theta0 + omega * dt) - cosf(theta0));
+  } else {
+    predictAzimuth = theta0;
+    predictX = currentX_global + velocity * dt * cosf(theta0);
+    predictY = currentY_global + velocity * dt * sinf(theta0);
+  }
+
+  global_azimuth = wrapAnglePi(predictAzimuth);
+  currentX_global = predictX;
+  currentY_global = predictY;
+  LastCommandTime = currentTime;
+  predictCount++;
+  newPosition = true;
+  if (DEBUG_KIN_FALLBACK) {
+    Serial.print("KIN_FALLBACK PREDICT count=");
+    Serial.print(predictCount);
+    Serial.print(" x=");
+    Serial.print(currentX_global);
+    Serial.print(" y=");
+    Serial.print(currentY_global);
+    Serial.print(" az=");
+    Serial.println(global_azimuth);
+  }
+}
+
+//---------- end kinematic fallback functions----------//
 //---------- start pure pursuit functions----------//
 
 
@@ -623,6 +706,10 @@ float prevY=0.0f;
   }
 
   newPosition = true;
+  LastRangingUpdateTime = millis();
+  waitForUwbAfterPredictCap = false;
+  fallbackActive = false;
+  predictCount = 0;
 // ------------ End Heading Calculation ------------ //
 }
 
@@ -699,6 +786,8 @@ void setup() {
   digitalWrite(RoboClawFusePin, HIGH);
   digitalWrite(PumpPin, LOW);
   digitalWrite(SolenoidPin, HIGH);
+  LastCommandTime = millis();
+  LastRangingUpdateTime = LastCommandTime;
 
   // digitalWrite(ExtentPin, LOW); // to raise the mop 
   // digitalWrite(RetractPin, HIGH);
@@ -714,7 +803,9 @@ void loop() {
   digitalWrite(LEDR, !digitalRead(LEDR));
 #endif
 delay(10);
+  kinematicPrediction();
   while (inRangingHandler || !newPosition) {
+    kinematicPrediction();
     delay(10);
   }
 
@@ -728,6 +819,7 @@ delay(10);
     CleaningStage = CleaningStage + 1;
     // does pass again
     controller.SpeedAccelM1M2(MOTOR_ADDRESS, motor_accel, 0, 0);
+    LastCommandTime = millis();
     delay(3000);
     pathSegIdx = 0;
     
@@ -782,11 +874,13 @@ delay(10);
   if (L_d < 1.0f) {
     K = 0.0f;
     driveMotors(0, 0);
+    LastCommandTime = millis();
   } else {
     K = 2.0f * sinf(alpha) / L_d;
     omega = K * cmdVelocity;
     leftMotor  = (cmdVelocity + omega * trackWidth / 2.0f) / wheelRadius;
     rightMotor = (cmdVelocity - omega * trackWidth / 2.0f) / wheelRadius;
     driveMotors(leftMotor, rightMotor);
+    LastCommandTime = millis();
   }
 }
