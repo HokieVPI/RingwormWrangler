@@ -343,7 +343,7 @@ unsigned long LastCommandTime = 0;
 unsigned long LastRangingUpdateTime = 0;
 unsigned long StaleCommand = 2000; // 2 seconds
 int predictCount=0; // count of predictions
-int predictCountMax=10; // max count of predictions
+int predictCountMax=3; // max count of predictions
 bool waitForUwbAfterPredictCap = false;
 const bool DEBUG_KIN_FALLBACK = true;
 bool fallbackActive = false;
@@ -812,8 +812,8 @@ delay(10);
   // Serial.println(pathSegIdx);
   newPosition = false;  // consumed; wait for next update before next iteration
   AdvancePathSegment(); // check if we reached the next waypoint
-  // applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
-  // digitalWrite(RoboClawFusePin, HIGH);
+  applySprayOutputs();  // hold pump/solenoid state for whole time CleaningStage == 1
+  digitalWrite(RoboClawFusePin, HIGH);
   if (PathComplete()) {
     // Advance cleaning stage
     CleaningStage = CleaningStage + 1;
