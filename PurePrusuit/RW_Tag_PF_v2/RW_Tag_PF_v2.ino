@@ -347,6 +347,8 @@ int predictCountMax=10; // max count of predictions
 bool waitForUwbAfterPredictCap = false;
 const bool DEBUG_KIN_FALLBACK = true;
 bool fallbackActive = false;
+float cmdV_last = 0.0f;      // cm/s
+float cmdOmega_last = 0.0f;  // rad/s
 
 void kinematicPrediction(){
   unsigned long currentTime = millis();
@@ -378,6 +380,8 @@ void kinematicPrediction(){
   if (predictCount >= predictCountMax) {
     waitForUwbAfterPredictCap = true;
     driveMotors(0.0f, 0.0f);
+    cmdV_last = 0.0f;
+    cmdOmega_last = 0.0f;
     LastCommandTime = currentTime;
     if (DEBUG_KIN_FALLBACK) {
       Serial.println("KIN_FALLBACK CAP_STOP");
@@ -387,15 +391,17 @@ void kinematicPrediction(){
 
   float dt = (currentTime - LastCommandTime) / 1000.0f;
   float theta0 = global_azimuth;
+  float V = cmdV_last;
+  float w = cmdOmega_last;
 
-  if (fabsf(omega) > 1e-5f) {
-    predictAzimuth = theta0 + omega * dt;
-    predictX = currentX_global + (velocity / omega) * (sinf(theta0 + omega * dt) - sinf(theta0));
-    predictY = currentY_global - (velocity / omega) * (cosf(theta0 + omega * dt) - cosf(theta0));
+  if (fabsf(w) > 1e-5f) {
+    predictAzimuth = theta0 + w * dt;
+    predictX = currentX_global + (V / w) * (sinf(theta0 + w * dt) - sinf(theta0));
+    predictY = currentY_global - (V / w) * (cosf(theta0 + w * dt) - cosf(theta0));
   } else {
     predictAzimuth = theta0;
-    predictX = currentX_global + velocity * dt * cosf(theta0);
-    predictY = currentY_global + velocity * dt * sinf(theta0);
+    predictX = currentX_global + V * dt * cosf(theta0);
+    predictY = currentY_global + V * dt * sinf(theta0);
   }
 
   global_azimuth = wrapAnglePi(predictAzimuth);
@@ -701,6 +707,9 @@ float prevY=0.0f;
     if(staleCount >= MAX_STALE) {
       float minDrive = 0.5f * velocity / wheelRadius;
       driveMotors(-minDrive, -minDrive);
+      cmdV_last = -0.5f * velocity;
+      cmdOmega_last = 0.0f;
+      LastCommandTime = millis();
     }
 
   }
@@ -788,6 +797,8 @@ void setup() {
   digitalWrite(SolenoidPin, HIGH);
   LastCommandTime = millis();
   LastRangingUpdateTime = LastCommandTime;
+  cmdV_last = 0.0f;
+  cmdOmega_last = 0.0f;
 
   // digitalWrite(ExtentPin, LOW); // to raise the mop 
   // digitalWrite(RetractPin, HIGH);
@@ -819,6 +830,8 @@ delay(10);
     CleaningStage = CleaningStage + 1;
     // does pass again
     controller.SpeedAccelM1M2(MOTOR_ADDRESS, motor_accel, 0, 0);
+    cmdV_last = 0.0f;
+    cmdOmega_last = 0.0f;
     LastCommandTime = millis();
     delay(3000);
     pathSegIdx = 0;
@@ -831,6 +844,8 @@ delay(10);
       controller.SpeedAccelM1M2_2(MOTOR_ADDRESS,
                                    motor_accel, 0,
                                    motor_accel, 0);
+      cmdV_last = 0.0f;
+      cmdOmega_last = 0.0f;
       Serial.end();
       while (true) {
         delay(1000);
@@ -874,6 +889,8 @@ delay(10);
   if (L_d < 1.0f) {
     K = 0.0f;
     driveMotors(0, 0);
+    cmdV_last = 0.0f;
+    cmdOmega_last = 0.0f;
     LastCommandTime = millis();
   } else {
     K = 2.0f * sinf(alpha) / L_d;
@@ -881,6 +898,8 @@ delay(10);
     leftMotor  = (cmdVelocity + omega * trackWidth / 2.0f) / wheelRadius;
     rightMotor = (cmdVelocity - omega * trackWidth / 2.0f) / wheelRadius;
     driveMotors(leftMotor, rightMotor);
+    cmdV_last = cmdVelocity;
+    cmdOmega_last = omega;
     LastCommandTime = millis();
   }
 }
