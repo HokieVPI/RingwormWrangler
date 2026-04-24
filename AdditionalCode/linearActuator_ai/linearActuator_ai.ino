@@ -69,13 +69,13 @@ void retractActuator() {
 
 void handleCommand(char cmd) {
   if (cmd == 'e' || cmd == 'E') {
-    Serial.println("Extending for 1 second...");
+    Serial.println("Extending for 4 second...");
     extendActuator();
     delay(ActuatorDuration);
     stopActuator();
     Serial.println("Stopped.");
   } else if (cmd == 'r' || cmd == 'R') {
-    Serial.println("Retracting for 1 second...");
+    Serial.println("Retracting for 4 second...");
     retractActuator();
     delay(ActuatorDuration);
     stopActuator();
