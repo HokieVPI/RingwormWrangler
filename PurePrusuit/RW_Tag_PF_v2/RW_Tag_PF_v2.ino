@@ -338,14 +338,19 @@ unsigned long LastCommandTime = 0;
 unsigned long LastRangingUpdateTime = 0;
 unsigned long StaleCommand = 2000; // 2 seconds
 int predictCount=0; // count of predictions
-int predictCountMax=3; // max count of predictions
+int predictCountMax=4; // max count of predictions
 bool waitForUwbAfterPredictCap = false;
 const bool DEBUG_KIN_FALLBACK = true;
 bool fallbackActive = false;
 
 void kinematicPrediction(){
   unsigned long currentTime = millis();
+
+  // Prediction cap reached: crawl straight ahead at minimum speed until UWB recovers.
   if (waitForUwbAfterPredictCap) {
+    float minDrive = MIN_SPEED_SCALE * velocity / wheelRadius;
+    driveMotors(minDrive, minDrive);
+    LastCommandTime = currentTime;
     return;
   }
 
@@ -372,10 +377,11 @@ void kinematicPrediction(){
 
   if (predictCount >= predictCountMax) {
     waitForUwbAfterPredictCap = true;
-    driveMotors(0.0f, 0.0f);
+    float minDrive = MIN_SPEED_SCALE * velocity / wheelRadius;
+    driveMotors(minDrive, minDrive);
     LastCommandTime = currentTime;
     if (DEBUG_KIN_FALLBACK) {
-      Serial.println("KIN_FALLBACK CAP_STOP");
+      Serial.println("KIN_FALLBACK CAP_CRAWL");
     }
     return;
   }
